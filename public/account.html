@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>账号 · MadeClaw</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page">
+    <header class="top">
+      <a class="brand" href="/">MadeClaw</a>
+      <nav class="nav">
+        <a href="/download">下载</a>
+        <a href="/recharge">充值</a>
+        <a href="/usage">用量</a>
+        <a href="#" id="logout">退出</a>
+      </nav>
+    </header>
+    <main class="panel panel-wide">
+      <h1>我的账号</h1>
+      <div id="alert" class="alert alert-err" hidden></div>
+      <div id="body" class="muted">加载中…</div>
+      <div class="cta-row" style="margin-top: 1.25rem" id="actions" hidden>
+        <a class="btn btn-primary" href="/recharge">充值</a>
+        <a class="btn btn-ghost" href="/usage">查看用量</a>
+        <a class="btn btn-ghost" href="/download">下载 App</a>
+      </div>
+    </main>
+    <footer class="foot">将下方 userId 写入 MadeClaw App 配置</footer>
+    <script src="/site-auth.js"></script>
+    <script>
+      const alertEl = document.getElementById("alert");
+      const body = document.getElementById("body");
+      async function load() {
+        const me = await MadeClawAuth.me();
+        if (!me?.user) {
+          location.href = "/login?next=/account";
+          return;
+        }
+        const u = me.user;
+        const usage = me.usage || {};
+        body.innerHTML = `
+          <dl class="kv">
+            <dt>用户名</dt><dd>${u.username}</dd>
+            <dt>userId</dt><dd><code id="uid">${u.userId}</code> <button type="button" class="btn btn-ghost btn-sm" id="copy">复制</button></dd>
+            <dt>邮箱</dt><dd>${u.email || "—"}</dd>
+            <dt>余额</dt><dd class="balance">${MadeClawAuth.formatUsd(me.balanceCents)} <span class="muted">(${me.balanceCents} 美分)</span></dd>
+            <dt>用量</dt><dd>总 token ${usage.totalTokens ?? 0} · 事件 ${usage.events ?? 0}</dd>
+            <dt>收件箱</dt><dd>${me.inboxPending ?? 0} 条待读</dd>
+          </dl>`;
+        document.getElementById("actions").hidden = false;
+        document.getElementById("copy")?.addEventListener("click", async () => {
+          await navigator.clipboard.writeText(u.userId);
+          alertEl.hidden = false;
+          alertEl.className = "alert";
+          alertEl.style.background = "rgba(46,196,168,0.15)";
+          alertEl.style.color = "var(--accent-bright)";
+          alertEl.textContent = "已复制 userId";
+        });
+      }
+      document.getElementById("logout").addEventListener("click", async (e) => {
+        e.preventDefault();
+        await MadeClawAuth.logout();
+        location.href = "/";
+      });
+      load().catch((err) => {
+        alertEl.hidden = false;
+        alertEl.textContent = String(err);
+        body.textContent = "";
+      });
+    </script>
+  </body>
+</html>

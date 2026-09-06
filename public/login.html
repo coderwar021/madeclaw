@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>登录 · MadeClaw</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page">
+    <header class="top">
+      <a class="brand" href="/">MadeClaw</a>
+      <nav class="nav">
+        <a href="/download">下载</a>
+        <a href="/register">注册</a>
+      </nav>
+    </header>
+    <main class="panel">
+      <h1>登录</h1>
+      <p>使用用户名或邮箱登录。登录后可查看余额、充值与用量。</p>
+      <div id="alert" class="alert alert-err" hidden></div>
+      <form id="form">
+        <label for="login">用户名或邮箱</label>
+        <input id="login" name="login" required autocomplete="username" />
+        <label for="password">密码</label>
+        <input id="password" name="password" type="password" required minlength="8" autocomplete="current-password" />
+        <button class="btn btn-primary" type="submit" style="width: 100%">登录</button>
+      </form>
+      <p class="how-note">没有账号？<a href="/register">注册</a></p>
+    </main>
+    <footer class="foot">会话 Cookie · 密码 scrypt 哈希</footer>
+    <script src="/site-auth.js"></script>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const alertEl = document.getElementById("alert");
+      if (params.get("error")) {
+        alertEl.hidden = false;
+        alertEl.textContent = params.get("error");
+      }
+      document.getElementById("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        alertEl.hidden = true;
+        try {
+          await MadeClawAuth.login(
+            document.getElementById("login").value,
+            document.getElementById("password").value,
+          );
+          location.href = params.get("next") || "/account";
+        } catch (err) {
+          alertEl.hidden = false;
+          alertEl.textContent = String(err.message || err);
+        }
+      });
+    </script>
+  </body>
+</html>

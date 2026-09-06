@@ -1,144 +1,92 @@
 # MadeClaw Online Server (Railway)
 
-Self-contained **website + billing API + Waffo recharge** for MadeClaw operators.
+Self-contained **website + auth + billing API + Waffo recharge** for MadeClaw.
 
-Deploy this folder as the Railway app root (or as the GitHub repo root that Group 3 pushes to `coderwar021/madeclaw`).
+Deploy this folder as the Railway app root (or GitHub repo root pushed to `coderwar021/madeclaw`).
 
-Ledger is **MadeClaw-only** (`creditsMadeApiWallet: false`). Shares Waffo merchant with MadeAPI; never credits MadeAPI wallets.
+Ledger is **MadeClaw-only** (`creditsMadeApiWallet: false`).
 
-## Endpoints
+## Site pages
+
+| Path | Purpose |
+| --- | --- |
+| `/` | Motion landing |
+| `/features` | 功能介绍 |
+| `/models` | 模型选项（MadeAPI 公开稳定 ID） |
+| `/download` | 下载包 + **下载后怎么用** |
+| `/login` `/register` `/account` | 账号（session cookie） |
+| `/recharge` `/usage` | 充值 / 用量 |
+| `/health` | Railway health |
+
+Nav: **功能 / 模型 / 下载 / 充值 / 登录**
+
+## Auth model
+
+- **Register / login** with username (+ optional email) and password
+- Passwords: **scrypt** hashes only (never plaintext)
+- Session: opaque `mc_sid` **HttpOnly** cookie → `sessions` map in the same JSON store as the ledger (`BILLING_DB`, typically `/data/balance.json`)
+- Each user gets a stable **`userId`** (`mc_…`) used by recharge, debit, and the App plugin
+- Fail closed on bad credentials / missing session
+
+## Downloads
+
+Installer binaries are **too large for git / Railway image**. Defaults point at GitHub Releases:
+
+- macOS DMG: `…/releases/download/v2026.8.1/MadeClaw-macOS-2026.8.1.dmg`
+- Windows x64 / ARM64 Setup.exe（同 tag）
+
+Checksums shipped in-repo: [`public/downloads/SHA256SUMS.txt`](public/downloads/SHA256SUMS.txt)  
+API: `GET /v1/downloads` (override with `DOWNLOAD_MACOS_URL` / `DOWNLOAD_WINDOWS_*_URL`)
+
+Upload assets once:
+
+```bash
+gh release create v2026.8.1 \
+  --repo coderwar021/madeclaw \
+  --title "MadeClaw 2026.8.1" \
+  path/to/MadeClaw-macOS-2026.8.1.dmg \
+  path/to/MadeClaw-Windows-x64-Setup.exe \
+  path/to/MadeClaw-Windows-arm64-Setup.exe
+```
+
+## API (billing)
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| GET | `/` | public | Landing |
-| GET | `/recharge` | public | Recharge form (Chinese) |
-| GET | `/pay?userId=&amountCents=` | public | Create Waffo checkout → 302 |
-| GET | `/pay/success` | public | Post-pay page |
-| GET | `/usage` | public | Token stats page |
-| GET | `/health` | public | Railway health |
-| GET | `/v1/balance?userId=` | Bearer | Balance (+ usage, inboxPending) |
-| POST | `/v1/credit` | Bearer | Ops/test credit |
-| POST | `/v1/debit` | Bearer | Run fee debit (plugin today) |
-| POST | `/v1/usage` | Bearer | Report token usage |
-| GET | `/v1/usage?userId=` | Bearer | Usage totals + recent events |
-| POST | `/v1/messages` | Bearer | Enqueue downlink message |
-| GET | `/v1/messages/poll?userId=` | Bearer | Poll pending messages |
-| POST | `/v1/messages/ack` | Bearer | Ack messages |
-| POST | `/v1/hold` | Bearer | Pre-debit reserve |
-| POST | `/v1/capture` | Bearer | Finalize hold |
-| POST | `/v1/release` | Bearer | Refund hold |
-| POST | `/v1/checkout` | Bearer | Server-side checkout create |
-| POST | `/v1/webhooks/waffo` | webhook secret | Paid → credit ledger |
+| GET | `/v1/balance?userId=` | Bearer | Balance |
+| POST | `/v1/credit` `/v1/debit` | Bearer | Ledger |
+| POST | `/v1/usage` · GET `/v1/usage` | Bearer | Token usage |
+| POST/GET | `/v1/messages*` | Bearer | Inbox downlink |
+| POST | `/v1/hold` `/v1/capture` `/v1/release` | Bearer | Pre-debit |
+| POST | `/v1/checkout` | Bearer | Checkout |
+| POST | `/v1/webhooks/waffo` | webhook secret | Paid → credit |
+| POST | `/v1/auth/register` `/login` `/logout` | public | Site auth |
+| GET | `/v1/auth/me` | session cookie | Current user |
+| GET | `/v1/models` `/v1/downloads` | public | Catalogs |
+| GET | `/pay?userId=&amountCents=` | public (+ session) | Waffo redirect |
 
-Bearer: `Authorization: Bearer ${BILLING_SERVICE_TOKEN}`  
-OOB when unset: `MADECLAW_DEFAULT_SERVICE_TOKEN` (`madeclaw-oob-service-token-v1`) — same as plugin.  
-Webhook: `Authorization: Bearer ${WAFFO_WEBHOOK_SECRET}` or header `X-Webhook-Secret`
+Bearer: `BILLING_SERVICE_TOKEN` or OOB `MADECLAW_DEFAULT_SERVICE_TOKEN` (`madeclaw-oob-service-token-v1`).
 
-## Production hardening (vs local `billing/` prototype)
+## Production notes
 
-- **Auth**: Bearer required when `BILLING_SERVICE_TOKEN` is set (or OOB default from `defaults.js`). Empty custom token falls back to the shared OOB token.
-- **Webhook auth**: fail-closed at request time in production if `WAFFO_WEBHOOK_SECRET` unset (503); wrong secret → 401. Not required to boot.
-- **Waffo checkout**: `WAFFO_MERCHANT_ID` / private key optional at boot — only `/pay` and `/v1/checkout` fail closed (503) when unset.
-- **`simulatePaid`**: only when `BILLING_ALLOW_SIMULATE=1` (keep unset in prod).
-- **`/pay` owned here**: point `payBaseUrl` at this service — do not use Open WebUI.
-- **Hold API**: optional formal reserve (`/v1/hold` + capture/release). Current plugin (Group 2) already **pre-debits** via `POST /v1/debit` on `before_agent_run` with `ref=run:{runId}` and refunds failed runs — that closes the old post-run race when `runId` is present.
+- Waffo merchant/key **lazy**: boot without them; `/pay` + `/v1/checkout` fail closed if unset
+- Webhook fail-closed in production if `WAFFO_WEBHOOK_SECRET` unset
+- `simulatePaid` only when `BILLING_ALLOW_SIMULATE=1`
+- Volume: mount `/data`, set `BILLING_DB=/data/balance.json`
 
-### Debit timing
+## Env
 
-Prefer gate-time debit (or hold) with idempotent `ref`. Do not rely on post-run-only debit.
-
-## Env vars
-
-See [`.env.example`](.env.example). Required on Railway:
-
-| Variable | Notes |
-| --- | --- |
-| `PORT` | Railway sets automatically |
-| `NODE_ENV` | `production` |
-| `PUBLIC_BASE_URL` | Optional; defaults to `https://madeclaw.up.railway.app` (no trailing slash) |
-| `BILLING_SERVICE_TOKEN` | Optional; defaults to OOB token in `src/defaults.js` (must match plugin `serviceToken`) |
-| `BILLING_DB` | `/data/balance.json` with volume |
-| `WAFFO_MERCHANT_ID` / `WAFFO_PRIVATE_KEY` | Optional at boot — `/health`, ledger APIs, and UI work without them; only `/pay` + `/v1/checkout` need them |
-| `WAFFO_STORE_ID` / `WAFFO_PRODUCT_ID` | Defaults in `.env.example` |
-| `WAFFO_WEBHOOK_SECRET` | Required for webhook credit path (request-time fail-closed in production); not required to boot |
-| `BILLING_ALLOW_SIMULATE` | Must be `0` or unset in prod |
-
-**Do not** commit PEM files, tokens, or MadeAPI keys.
-
-### SQLite / persistence
-
-Store is a **JSON file ledger** (portable, no native build). On Railway:
-
-1. Create a Volume, mount path `/data`
-2. Set `BILLING_DB=/data/balance.json`
-
-Without a volume, balance is **ephemeral** (lost on redeploy). Postgres is not required.
-
-## Railway deploy
-
-1. Push this folder as the repo root (or set Railway Root Directory to `railway-app` if nested).
-2. New Project → Deploy from GitHub (`coderwar021/madeclaw`).
-3. Add variables from `.env.example` (real secrets in Railway UI only).
-4. Add Volume `/data`.
-5. In Waffo dashboard, webhook URL:  
-   `https://<railway-domain>/v1/webhooks/waffo`  
-   with `Authorization: Bearer <WAFFO_WEBHOOK_SECRET>` (or `?secret=` if the provider only supports query).
-6. Confirm `GET https://<domain>/health` → `"creditsMadeApiWallet": false`.
-7. Smoke recharge: open `/pay?userId=test&amountCents=100` (small live amount) or use `/recharge`.
-
-### Dockerfile
-
-```bash
-docker build -t madeclaw-online .
-docker run --rm -p 8787:8787 \
-  -e BILLING_SERVICE_TOKEN=dev \
-  -e WAFFO_WEBHOOK_SECRET=dev \
-  -e WAFFO_MERCHANT_ID=... \
-  -e WAFFO_PRIVATE_KEY="$(cat secrets/waffo-private.pem)" \
-  -e PUBLIC_BASE_URL=http://127.0.0.1:8787 \
-  -e BILLING_DB=/tmp/balance.json \
-  -e NODE_ENV=production \
-  madeclaw-online
-```
-
-## MadeClaw client wiring
-
-`billingBaseUrl` and `payBaseUrl` must be the **same public origin** (no `/pay` suffix — plugin appends `/pay` and `/v1/*`):
-
-```json
-{
-  "billingBaseUrl": "https://<railway-domain>",
-  "payBaseUrl": "https://<railway-domain>",
-  "serviceToken": "<same as BILLING_SERVICE_TOKEN>",
-  "userId": "<per-operator id>"
-}
-```
-
-Or env: `MADECLAW_PUBLIC_ORIGIN=https://<railway-domain>`.
-
-After recharge + webhook, `madeclaw_balance` must match ledger deductions from `/v1/debit`.
+See [`.env.example`](.env.example). **Do not** commit PEM files, tokens, or MadeAPI keys.
 
 ## Local
 
 ```bash
-cd railway-app
-cp .env.example .env
-# fill WAFFO_PRIVATE_KEY_PATH or WAFFO_PRIVATE_KEY; for smoke no real Waffo needed
 npm install
 npm run smoke   # SMOKE_OK
-NODE_ENV=development BILLING_REQUIRE_AUTH=1 npm start
+npm start
 ```
 
-## Group handoff
+## Related
 
-| Group | Owns |
-| --- | --- |
-| **1 (this)** | Deployable online server in this folder |
-| **2** | Client/plugin defaults → Railway origin; `serviceToken`/`userId` match; pre-debit already preferred |
-| **3** | Git push to `git@github.com:coderwar021/madeclaw.git` (repo root = this app, or set Railway root to `railway-app`) |
-
-## Related docs
-
-- Parent contract: [`../PAY-CONTRACT.md`](../PAY-CONTRACT.md)
-- Architecture: [`../ARCHITECTURE-billing.md`](../ARCHITECTURE-billing.md)
-- Local prototype (non-prod): [`../billing/`](../billing/)
+- Pay contract / architecture docs in the parent MadeClaw package when present
+- Plugin `serviceToken` / `userId` must match this origin

@@ -77,8 +77,52 @@ async function main() {
     throw new Error("landing page missing");
   }
 
+  for (const path of ["/download", "/features", "/models", "/login", "/register"]) {
+    const page = await fetch(`${base}${path}`);
+    if (!page.ok) throw new Error(`page ${path} status ${page.status}`);
+  }
+
+  const dl = await fetch(`${base}/v1/downloads`);
+  const dlBody = await dl.json();
+  if (!dlBody.platforms?.some((p) => p.id === "macos" && p.url)) {
+    throw new Error(`downloads catalog bad: ${JSON.stringify(dlBody)}`);
+  }
+
+  // Site auth: register → me → logout
+  let r;
+  const authUser = `smoke_${process.pid}`;
+  const authPass = "smoke-pass-ok";
+  r = await fetch(`${base}/v1/auth/register`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username: authUser, password: authPass }),
+  });
+  if (!r.ok) throw new Error(`register failed ${await r.text()}`);
+  const reg = await r.json();
+  if (!reg.user?.userId?.startsWith("mc_")) throw new Error(`bad userId ${reg.user?.userId}`);
+  const setCookie = r.headers.getSetCookie?.() || [];
+  const cookieHeader =
+    setCookie.map((c) => c.split(";")[0]).join("; ") ||
+    (() => {
+      const raw = r.headers.get("set-cookie");
+      return raw ? raw.split(";")[0] : "";
+    })();
+  if (!cookieHeader) throw new Error("missing session cookie");
+
+  r = await fetch(`${base}/v1/auth/me`, { headers: { cookie: cookieHeader } });
+  if (!r.ok) throw new Error(`me failed ${await r.text()}`);
+  const me = await r.json();
+  if (me.user.userId !== reg.user.userId) throw new Error("me user mismatch");
+
+  r = await fetch(`${base}/v1/auth/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ login: authUser, password: "wrong-password" }),
+  });
+  if (r.status !== 401) throw new Error(`expected login 401 got ${r.status}`);
+
   // Unauthorized balance
-  let r = await fetch(`${base}/v1/balance?userId=x`);
+  r = await fetch(`${base}/v1/balance?userId=x`);
   if (r.status !== 401) throw new Error(`expected 401 balance, got ${r.status}`);
 
   const userId = "smoke-user";

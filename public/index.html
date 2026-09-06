@@ -6,7 +6,7 @@
     <title>MadeClaw</title>
     <meta
       name="description"
-      content="MadeClaw — 桌面 AI 助手。App 内使用，网站充值，余额独立。"
+      content="MadeClaw — 桌面 AI 助手。下载 App，官网登录充值，余额独立。"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,9 +28,11 @@
     <header class="top top-home">
       <a class="brand" href="/">MadeClaw</a>
       <nav class="nav">
+        <a href="/features">功能</a>
+        <a href="/models">模型</a>
+        <a href="/download">下载</a>
         <a href="/recharge">充值</a>
-        <a href="/usage">用量</a>
-        <a href="/health">状态</a>
+        <span data-auth-nav><a href="/login">登录</a></span>
       </nav>
     </header>
 
@@ -38,13 +40,13 @@
       <div class="hero-copy">
         <p class="eyebrow enter enter-1">独立账本 · 桌面优先</p>
         <h1 class="brand-hero mask-reveal text-metallic">MadeClaw</h1>
-        <p class="headline blur-in">App 里干活，站上充值。</p>
+        <p class="headline blur-in">下载 App，站上登录充值。</p>
         <p class="lead enter enter-2">
           对话与执行留在桌面；额度记入 MadeClaw 独立余额，与 MadeAPI 钱包分开。
         </p>
         <div class="cta-row enter enter-3">
-          <a class="btn btn-primary mag-btn shadow-grow-soft" href="/recharge">立即充值</a>
-          <a class="btn btn-ghost" href="#how">了解流程</a>
+          <a class="btn btn-primary mag-btn shadow-grow-soft" href="/download">立即下载</a>
+          <a class="btn btn-ghost" href="/features">了解功能</a>
         </div>
       </div>
 
@@ -65,25 +67,45 @@
       </div>
     </section>
 
+    <section id="features-preview" class="band">
+      <div class="band-inner scroll-reveal">
+        <p class="eyebrow">功能</p>
+        <h2>App + 官网，各司其职</h2>
+        <p class="band-lead">
+          桌面干活，网站管账号与充值。用量、消息下传、开箱连本站，一条链路跑通。
+        </p>
+        <ul class="feature-list stagger">
+          <li><strong>双端</strong> — MadeClaw App 与 Control UI，本机 Gateway 执行。</li>
+          <li><strong>独立余额</strong> — 充值记入本站账本，不进 MadeAPI 钱包。</li>
+          <li><strong>模型自选</strong> — App 内选 MadeAPI 模型；也可自备 API 跳过余额。</li>
+          <li><strong>用量可见</strong> — Token 统计与消息下传 inbox，随时核对。</li>
+        </ul>
+        <p class="how-note"><a href="/features">完整功能介绍 →</a></p>
+      </div>
+    </section>
+
     <section id="how" class="how">
       <div class="how-inner scroll-reveal">
-        <h2>如何充值</h2>
+        <h2>下载后怎么用</h2>
         <ol class="how-steps stagger">
-          <li>
-            在 MadeClaw App 使用「充值」或工具 <code>madeclaw_recharge</code>，打开带
-            <code>userId</code> 的链接。
-          </li>
-          <li>本站创建支付会话并跳转 Waffo 收银台。</li>
-          <li>支付成功后，Webhook 将金额记入你的 MadeClaw 余额。</li>
-          <li>返回 App 继续使用；余额与扣费使用同一套 API。</li>
+          <li>从 <a href="/download">下载页</a> 获取 macOS DMG（或 Windows 安装包），打开 MadeClaw.app。</li>
+          <li>在本站 <a href="/register">注册 / 登录</a>，记下账号页显示的 <code>userId</code>。</li>
+          <li>App 内填 MadeAPI Key，或充值后用本站余额；模型在 App / Control UI 选择。</li>
+          <li>余额不足时打开 <a href="/recharge">充值</a>；支付成功后与 App 扣费同一 <code>userId</code>。</li>
         </ol>
         <p class="how-note">
-          也可手动打开 <a href="/recharge">充值页</a>，填入 App 显示的 userId。
+          详见 <a href="/download#howto">下载后怎么用</a> · <a href="/models">模型列表</a>
         </p>
       </div>
     </section>
 
     <footer class="foot">MadeClaw Online · 独立余额 · creditsMadeApiWallet: false</footer>
+    <script src="/site-auth.js" defer></script>
     <script src="/motion.js" defer></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        window.MadeClawAuth?.paintNav();
+      });
+    </script>
   </body>
 </html>

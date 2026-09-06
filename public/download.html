@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>下载 · MadeClaw</title>
+    <meta name="description" content="下载 MadeClaw macOS / Windows 安装包，并查看下载后怎么用。" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page">
+    <div class="scroll-progress" aria-hidden="true"><div class="bar"></div></div>
+    <header class="top">
+      <a class="brand" href="/">MadeClaw</a>
+      <nav class="nav">
+        <a href="/features">功能</a>
+        <a href="/models">模型</a>
+        <a href="/download">下载</a>
+        <a href="/recharge">充值</a>
+        <span data-auth-nav><a href="/login">登录</a></span>
+      </nav>
+    </header>
+
+    <main class="page-wide">
+      <section class="band band-top">
+        <div class="band-inner scroll-reveal">
+          <p class="eyebrow">Download</p>
+          <h1 class="page-title">下载 MadeClaw</h1>
+          <p class="band-lead">
+            macOS 优先（MadeClaw.app）。安装包托管在 GitHub Releases（体积较大，不进站点镜像）。
+            校验和见本站 <a href="/downloads/SHA256SUMS.txt">SHA256SUMS.txt</a>。
+          </p>
+          <div id="dl-grid" class="dl-grid">
+            <p class="muted">正在加载下载链接…</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="howto" class="band">
+        <div class="band-inner scroll-reveal">
+          <p class="eyebrow">Getting started</p>
+          <h2>下载后怎么用</h2>
+          <ol class="how-steps stagger howto-steps">
+            <li>
+              <strong>安装 / 打开</strong> — macOS：打开 DMG，将 MadeClaw.app 拖入「应用程序」后启动。
+              Windows：运行对应 Setup.exe。
+            </li>
+            <li>
+              <strong>Gateway / Control UI</strong> — App 会拉起本机 Gateway；在 App 或 Control UI
+              完成引导。状态与端口以 App / 本机状态页为准（MadeClaw 配置档案）。
+            </li>
+            <li>
+              <strong>注册账号</strong> — 打开
+              <a href="/register">madeclaw.up.railway.app 注册</a>，登录后在
+              <a href="/account">账号页</a> 复制稳定 <code>userId</code>，写入 App 插件 /
+              MadeClaw 配置（与充值、扣费同一 ID）。
+            </li>
+            <li>
+              <strong>模型与密钥</strong> — 在 App 内选择模型（见
+              <a href="/models">模型列表</a>）。可填 MadeAPI Key；或充值后走本站独立余额。
+              自备非 MadeAPI 接口时可跳过余额扣费。
+            </li>
+            <li>
+              <strong>充值对齐用量</strong> — 余额不足时从 App「充值」或本站
+              <a href="/recharge">/recharge</a> 支付；Webhook 入账后，App
+              <code>madeclaw_balance</code> 与本站账本一致。用量见
+              <a href="/usage">/usage</a>。
+            </li>
+          </ol>
+          <div class="cta-row" style="margin-top: 1.5rem">
+            <a class="btn btn-primary" href="/register">注册账号</a>
+            <a class="btn btn-ghost" href="/recharge">去充值</a>
+            <a class="btn btn-ghost" href="/login">登录</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">MadeClaw · v2026.8.1 · GitHub Releases</footer>
+    <script src="/site-auth.js" defer></script>
+    <script src="/motion.js" defer></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        window.MadeClawAuth?.paintNav();
+        const grid = document.getElementById("dl-grid");
+        try {
+          const res = await fetch("/v1/downloads");
+          const data = await res.json();
+          grid.innerHTML = data.platforms
+            .map(
+              (p) => `
+            <a class="dl-card ${p.primary ? "dl-primary" : ""}" href="${p.url}" rel="noopener">
+              <span class="dl-label">${p.label}</span>
+              <span class="dl-file">${p.file}</span>
+              <span class="dl-cta">${p.primary ? "下载 DMG" : "下载安装包"}</span>
+            </a>`,
+            )
+            .join("");
+          if (data.checksumsUrl) {
+            const note = document.createElement("p");
+            note.className = "how-note";
+            note.innerHTML = `版本 <code>${data.version}</code> · <a href="${data.checksumsUrl}">校验和</a>`;
+            grid.after(note);
+          }
+        } catch (e) {
+          grid.innerHTML = `<p class="alert alert-err">无法加载下载列表：${String(e)}</p>`;
+        }
+      });
+    </script>
+  </body>
+</html>

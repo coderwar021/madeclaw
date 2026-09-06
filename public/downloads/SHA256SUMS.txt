@@ -1,0 +1,3 @@
+a7ee1082e32b56bc5d9dd7eb65797dca9a298a045bcca472bf8cf92db2036881  macOS/MadeClaw-macOS-2026.8.1.dmg
+2e2aef8523fed5c8803f449bc161ade6fe3ba89c12b767d936c3df2388466e25  Windows/MadeClaw-Windows-x64-Setup.exe
+609a6f780412f2d9d0d3d72bd1485b2f403c558b307da1e4eee20a06e948c77e  Windows/MadeClaw-Windows-arm64-Setup.exe

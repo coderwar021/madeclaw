@@ -10,33 +10,51 @@
     <header class="top">
       <a class="brand" href="/">MadeClaw</a>
       <nav class="nav">
+        <a href="/download">下载</a>
         <a href="/recharge">充值</a>
         <a href="/usage">用量</a>
-        <a href="/health">状态</a>
+        <span data-auth-nav><a href="/login">登录</a></span>
       </nav>
     </header>
     <main class="panel">
       <h1>Token 统计</h1>
-      <p class="lead">查询 MadeClaw 账本上报的模型用量（需 serviceToken）。</p>
+      <p class="lead">已登录时显示你的用量汇总；也可填 serviceToken 查询任意 userId。</p>
+      <div id="session-out" class="kv-wrap" hidden></div>
       <label>
         userId
-        <input id="userId" type="text" value="local-operator" autocomplete="username" />
+        <input id="userId" type="text" autocomplete="username" />
       </label>
       <label>
-        serviceToken
+        serviceToken（可选，插件 Bearer）
         <input id="token" type="password" placeholder="Bearer token" autocomplete="off" />
       </label>
       <button class="btn btn-primary" id="go" type="button">查询</button>
       <pre id="out" class="err" style="margin-top:1.25rem;white-space:pre-wrap"></pre>
     </main>
-    <footer class="foot">GET /v1/usage?userId= · POST /v1/usage</footer>
+    <footer class="foot">GET /v1/usage · 登录用户见账号页</footer>
+    <script src="/site-auth.js"></script>
     <script>
       const out = document.getElementById("out");
+      MadeClawAuth.paintNav().then((me) => {
+        if (me?.user) {
+          document.getElementById("userId").value = me.user.userId;
+          const box = document.getElementById("session-out");
+          box.hidden = false;
+          box.innerHTML = `<p>已登录 · 余额 ${MadeClawAuth.formatUsd(me.balanceCents)} · 总 token ${me.usage?.totalTokens ?? 0}</p>`;
+        }
+      });
       document.getElementById("go").addEventListener("click", async () => {
         const userId = document.getElementById("userId").value.trim();
         const token = document.getElementById("token").value.trim();
         out.textContent = "…";
         try {
+          if (!token) {
+            const me = await MadeClawAuth.me();
+            if (me?.user && me.user.userId === userId) {
+              out.textContent = JSON.stringify({ userId, usage: me.usage, source: "session" }, null, 2);
+              return;
+            }
+          }
           const res = await fetch("/v1/usage?userId=" + encodeURIComponent(userId), {
             headers: token ? { authorization: "Bearer " + token } : {},
           });

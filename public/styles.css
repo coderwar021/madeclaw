@@ -706,6 +706,263 @@ input:focus {
   margin-bottom: 0.5rem;
 }
 
+/* —— Content bands (features / models / download) —— */
+.page-wide {
+  flex: 1;
+  width: 100%;
+}
+
+.band {
+  padding: 0 1.5rem 3.5rem;
+}
+
+.band-top {
+  padding-top: 2rem;
+}
+
+.band-inner {
+  width: min(44rem, 100%);
+  margin: 0 auto;
+}
+
+.band-inner h2,
+.page-title {
+  font-family: var(--font-headline);
+  font-size: clamp(1.7rem, 3.2vw, 2.2rem);
+  font-weight: 400;
+  margin: 0.35rem 0 0.85rem;
+  color: var(--ink);
+}
+
+.band-lead {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+  max-width: 38rem;
+}
+
+.feature-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.feature-list li {
+  color: var(--muted);
+  padding-left: 0;
+  border-left: 2px solid var(--accent-dim);
+  padding: 0.35rem 0 0.35rem 1rem;
+}
+
+.feature-list strong {
+  color: var(--ink);
+}
+
+.feature-blocks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.feature-blocks h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 0 0 0.4rem;
+  color: var(--ink);
+}
+
+.feature-blocks p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+.dl-grid {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+}
+
+.dl-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: rgba(13, 28, 36, 0.72);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    transform 0.25s var(--ease-out);
+}
+
+.dl-card:hover {
+  text-decoration: none;
+  border-color: var(--accent-dim);
+  transform: translateY(-2px);
+}
+
+.dl-primary {
+  border-color: rgba(46, 196, 168, 0.45);
+  box-shadow: 0 8px 28px rgba(46, 196, 168, 0.12);
+}
+
+.dl-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.dl-file {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.dl-cta {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--accent-bright);
+  font-weight: 600;
+}
+
+.model-family {
+  margin-bottom: 2rem;
+}
+
+.model-family h2 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 0 0 0.75rem;
+}
+
+.model-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.model-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.model-list code {
+  color: var(--accent-bright);
+  font-size: 0.95rem;
+}
+
+.model-ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.model-note {
+  color: var(--warm);
+  font-size: 0.8rem;
+}
+
+.panel-wide {
+  width: min(34rem, 100%);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.55rem 0.75rem;
+  margin: 0;
+}
+
+.kv dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.kv dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.kv .balance {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--accent-bright);
+}
+
+.btn-sm {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  margin-left: 0.35rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.howto-steps li {
+  opacity: 1;
+  transform: none;
+}
+
+.band-inner.in .howto-steps li {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeInUp 0.55s var(--ease-out) forwards;
+}
+
+.band-inner.in .howto-steps li:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.band-inner.in .howto-steps li:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.band-inner.in .howto-steps li:nth-child(3) {
+  animation-delay: 0.19s;
+}
+.band-inner.in .howto-steps li:nth-child(4) {
+  animation-delay: 0.26s;
+}
+.band-inner.in .howto-steps li:nth-child(5) {
+  animation-delay: 0.33s;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.15rem 0;
+}
+
+.nav a {
+  margin-left: 1rem;
+}
+
+@media (max-width: 720px) {
+  .nav a {
+    margin-left: 0.75rem;
+    font-size: 0.88rem;
+  }
+
+  .kv {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Non-home pages keep atmospheric but calmer bg */
 body:not(.home) {
   background:

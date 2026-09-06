@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>模型 · MadeClaw</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page">
+    <div class="scroll-progress" aria-hidden="true"><div class="bar"></div></div>
+    <header class="top">
+      <a class="brand" href="/">MadeClaw</a>
+      <nav class="nav">
+        <a href="/features">功能</a>
+        <a href="/models">模型</a>
+        <a href="/download">下载</a>
+        <a href="/recharge">充值</a>
+        <span data-auth-nav><a href="/login">登录</a></span>
+      </nav>
+    </header>
+
+    <main class="page-wide">
+      <section class="band band-top">
+        <div class="band-inner scroll-reveal">
+          <p class="eyebrow">Models</p>
+          <h1 class="page-title">模型选项</h1>
+          <p class="band-lead">
+            <strong>在 App / Control UI 内选模型</strong>；充值与余额在本站。使用自备 API（非
+            madeapi）时可跳过 MadeClaw 余额扣费。
+          </p>
+          <p class="how-note">公开稳定 ID · provider 前缀 <code>madeapi/</code></p>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="band-inner scroll-reveal" id="model-families">
+          <p class="muted">加载中…</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">GET /v1/models</footer>
+    <script src="/site-auth.js" defer></script>
+    <script src="/motion.js" defer></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        window.MadeClawAuth?.paintNav();
+        const root = document.getElementById("model-families");
+        try {
+          const res = await fetch("/v1/models");
+          const data = await res.json();
+          root.innerHTML = data.families
+            .map(
+              (fam) => `
+            <div class="model-family">
+              <h2>${fam.family}</h2>
+              <ul class="model-list">
+                ${fam.models
+                  .map(
+                    (m) => `
+                  <li>
+                    <code>${m.id}</code>
+                    <span class="model-ref">${m.ref}</span>
+                    ${m.note ? `<span class="model-note">${m.note}</span>` : ""}
+                  </li>`,
+                  )
+                  .join("")}
+              </ul>
+            </div>`,
+            )
+            .join("");
+        } catch (e) {
+          root.innerHTML = `<p class="alert alert-err">${String(e)}</p>`;
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -16,9 +16,28 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import {
+  COOKIE_NAME,
+  SESSION_TTL_MS,
+  clearSessionCookie,
+  formatSetCookie,
+  hashPassword,
+  mintSessionToken,
+  mintUserId,
+  parseCookies,
+  publicUser,
+  sessionCookieOptions,
+  validateLoginInput,
+  validateRegisterInput,
+  verifyPassword,
+} from "./auth.js";
+import {
+  MADECLAW_APP_VERSION,
   MADECLAW_DEFAULT_SERVICE_TOKEN,
+  MADECLAW_DOWNLOADS,
   MADECLAW_PUBLIC_ORIGIN,
+  MADECLAW_RELEASE_TAG,
 } from "./defaults.js";
+import { MADECLAW_PUBLIC_MODELS } from "./models-catalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
@@ -128,11 +147,19 @@ fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
  *   holds: Record<string,{userId:string,amountCents:number,createdAt:string,meta?:unknown}>,
  *   usage: Array<Record<string,unknown>>,
  *   usageRefs: Record<string,true>,
- *   messages: Array<Record<string,unknown>>
+ *   messages: Array<Record<string,unknown>>,
+ *   users: Record<string,{
+ *     userId:string,username:string,email:string|null,
+ *     passwordHash:string,createdAt:string,updatedAt:string
+ *   }>,
+ *   sessions: Record<string,{userId:string,createdAt:string,expiresAt:string}>,
+ *   usernameIndex: Record<string,string>,
+ *   emailIndex: Record<string,string>
  * }} Store */
 
 const MAX_USAGE_EVENTS = 5000;
 const MAX_INBOX_MESSAGES = 2000;
+const MAX_SESSIONS = 5000;
 
 function emptyStore() {
   return {
@@ -144,6 +171,10 @@ function emptyStore() {
     usage: [],
     usageRefs: {},
     messages: [],
+    users: {},
+    sessions: {},
+    usernameIndex: {},
+    emailIndex: {},
   };
 }
 
@@ -160,6 +191,10 @@ function loadStore() {
       usage: Array.isArray(raw.usage) ? raw.usage : [],
       usageRefs: raw.usageRefs || {},
       messages: Array.isArray(raw.messages) ? raw.messages : [],
+      users: raw.users || {},
+      sessions: raw.sessions || {},
+      usernameIndex: raw.usernameIndex || {},
+      emailIndex: raw.emailIndex || {},
     };
   } catch {
     return emptyStore();
@@ -174,6 +209,162 @@ function saveStore(store) {
 
 function now() {
   return new Date().toISOString();
+}
+
+function pruneExpiredSessions(store) {
+  const ts = Date.now();
+  let changed = false;
+  for (const [token, row] of Object.entries(store.sessions)) {
+    if (!row?.expiresAt || Date.parse(row.expiresAt) <= ts) {
+      delete store.sessions[token];
+      changed = true;
+    }
+  }
+  const keys = Object.keys(store.sessions);
+  if (keys.length > MAX_SESSIONS) {
+    const sorted = keys
+      .map((k) => ({ k, t: Date.parse(store.sessions[k].createdAt) || 0 }))
+      .sort((a, b) => a.t - b.t);
+    for (let i = 0; i < sorted.length - MAX_SESSIONS; i++) {
+      delete store.sessions[sorted[i].k];
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+function findUserByLogin(store, login) {
+  const key = String(login || "")
+    .trim()
+    .toLowerCase();
+  if (!key) return null;
+  const byUser = store.usernameIndex[key];
+  if (byUser && store.users[byUser]) return store.users[byUser];
+  const byEmail = store.emailIndex[key];
+  if (byEmail && store.users[byEmail]) return store.users[byEmail];
+  return null;
+}
+
+function ensureAccount(store, userId) {
+  if (!store.accounts[userId]) {
+    store.accounts[userId] = { balanceCents: 0, updatedAt: now() };
+  }
+}
+
+async function registerUser({ username, email, password }) {
+  const checked = validateRegisterInput({ username, email, password });
+  if (!checked.ok) {
+    const err = new Error(checked.detail || checked.error);
+    err.code = checked.error;
+    err.status = 400;
+    throw err;
+  }
+  const store = loadStore();
+  if (store.usernameIndex[checked.username]) {
+    const err = new Error("用户名已被占用");
+    err.code = "username_taken";
+    err.status = 409;
+    throw err;
+  }
+  if (checked.email && store.emailIndex[checked.email]) {
+    const err = new Error("邮箱已被注册");
+    err.code = "email_taken";
+    err.status = 409;
+    throw err;
+  }
+  const userId = mintUserId();
+  const passwordHash = await hashPassword(checked.password);
+  const ts = now();
+  store.users[userId] = {
+    userId,
+    username: checked.username,
+    email: checked.email,
+    passwordHash,
+    createdAt: ts,
+    updatedAt: ts,
+  };
+  store.usernameIndex[checked.username] = userId;
+  if (checked.email) store.emailIndex[checked.email] = userId;
+  ensureAccount(store, userId);
+  pruneExpiredSessions(store);
+  saveStore(store);
+  return store.users[userId];
+}
+
+async function authenticateUser({ login, password }) {
+  const checked = validateLoginInput({ login, password });
+  if (!checked.ok) {
+    const err = new Error("账号或密码错误");
+    err.code = "invalid_credentials";
+    err.status = 401;
+    throw err;
+  }
+  const store = loadStore();
+  const user = findUserByLogin(store, checked.login);
+  if (!user?.passwordHash) {
+    // Constant-ish work to avoid trivial user enumeration via timing alone.
+    await hashPassword(checked.password);
+    const err = new Error("账号或密码错误");
+    err.code = "invalid_credentials";
+    err.status = 401;
+    throw err;
+  }
+  const ok = await verifyPassword(checked.password, user.passwordHash);
+  if (!ok) {
+    const err = new Error("账号或密码错误");
+    err.code = "invalid_credentials";
+    err.status = 401;
+    throw err;
+  }
+  return user;
+}
+
+function createSession(userId) {
+  const store = loadStore();
+  pruneExpiredSessions(store);
+  const token = mintSessionToken();
+  const createdAt = now();
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+  store.sessions[token] = { userId, createdAt, expiresAt };
+  saveStore(store);
+  return { token, expiresAt };
+}
+
+function destroySession(token) {
+  if (!token) return;
+  const store = loadStore();
+  if (store.sessions[token]) {
+    delete store.sessions[token];
+    saveStore(store);
+  }
+}
+
+function resolveSessionUser(req) {
+  const cookies = parseCookies(req);
+  const token = cookies[COOKIE_NAME];
+  if (!token) return null;
+  const store = loadStore();
+  const row = store.sessions[token];
+  if (!row) return null;
+  if (!row.expiresAt || Date.parse(row.expiresAt) <= Date.now()) {
+    delete store.sessions[token];
+    saveStore(store);
+    return null;
+  }
+  const user = store.users[row.userId];
+  if (!user) return null;
+  return { user, token, store };
+}
+
+function setSessionCookie(res, token) {
+  res.setHeader(
+    "Set-Cookie",
+    formatSetCookie(COOKIE_NAME, token, sessionCookieOptions(IS_PROD)),
+  );
+}
+
+function clearAuthCookie(res) {
+  res.setHeader("Set-Cookie", clearSessionCookie(IS_PROD));
 }
 
 function requireServiceAuth(req, res, next) {
@@ -598,6 +789,7 @@ app.get("/health", (_req, res) => {
     webhookAuthRequired: Boolean(WEBHOOK_SECRET) || IS_PROD,
     simulateAllowed: ALLOW_SIMULATE,
     publicBase: PUBLIC_BASE,
+    siteAuth: true,
   });
 });
 
@@ -619,6 +811,30 @@ app.get("/usage", (_req, res) => {
   sendPublic(res, "usage.html");
 });
 
+app.get("/login", (_req, res) => {
+  sendPublic(res, "login.html");
+});
+
+app.get("/register", (_req, res) => {
+  sendPublic(res, "register.html");
+});
+
+app.get("/account", (_req, res) => {
+  sendPublic(res, "account.html");
+});
+
+app.get("/models", (_req, res) => {
+  sendPublic(res, "models.html");
+});
+
+app.get("/features", (_req, res) => {
+  sendPublic(res, "features.html");
+});
+
+app.get("/download", (_req, res) => {
+  sendPublic(res, "download.html");
+});
+
 app.get("/pay/success", (_req, res) => {
   sendPublic(res, "success.html");
 });
@@ -626,6 +842,125 @@ app.get("/pay/success", (_req, res) => {
 // Compat alias used by older PAY_SUCCESS_URL defaults
 app.get("/v1/pay/success", (_req, res) => {
   res.redirect(302, "/pay/success");
+});
+
+app.get("/v1/models", (_req, res) => {
+  res.json({
+    provider: "madeapi",
+    note: "在 MadeClaw App / Control UI 内选择模型；本站负责账号与充值。自备 API（非 madeapi）可跳过余额扣费。",
+    families: MADECLAW_PUBLIC_MODELS,
+  });
+});
+
+app.get("/v1/downloads", (_req, res) => {
+  const macos =
+    (process.env.DOWNLOAD_MACOS_URL || "").trim() || MADECLAW_DOWNLOADS.macosDmg;
+  const windowsX64 =
+    (process.env.DOWNLOAD_WINDOWS_X64_URL || "").trim() || MADECLAW_DOWNLOADS.windowsX64;
+  const windowsArm64 =
+    (process.env.DOWNLOAD_WINDOWS_ARM64_URL || "").trim() || MADECLAW_DOWNLOADS.windowsArm64;
+  res.json({
+    version: MADECLAW_APP_VERSION,
+    releaseTag: MADECLAW_RELEASE_TAG,
+    note: "安装包托管于 GitHub Releases（体积过大，不进仓库与 Railway 镜像）。校验和见 /downloads/SHA256SUMS.txt。",
+    platforms: [
+      {
+        id: "macos",
+        label: "macOS",
+        file: `MadeClaw-macOS-${MADECLAW_APP_VERSION}.dmg`,
+        url: macos,
+        primary: true,
+      },
+      {
+        id: "windows-x64",
+        label: "Windows x64",
+        file: "MadeClaw-Windows-x64-Setup.exe",
+        url: windowsX64,
+        primary: false,
+      },
+      {
+        id: "windows-arm64",
+        label: "Windows ARM64",
+        file: "MadeClaw-Windows-arm64-Setup.exe",
+        url: windowsArm64,
+        primary: false,
+      },
+    ],
+    checksumsUrl: MADECLAW_DOWNLOADS.sha256Sums,
+  });
+});
+
+app.post("/v1/auth/register", async (req, res) => {
+  try {
+    const user = await registerUser({
+      username: req.body?.username,
+      email: req.body?.email,
+      password: req.body?.password,
+    });
+    const { token } = createSession(user.userId);
+    setSessionCookie(res, token);
+    const store = loadStore();
+    res.status(201).json({
+      ok: true,
+      user: publicUser(user),
+      balanceCents: getBalance(store, user.userId),
+      currency: "USD",
+    });
+  } catch (e) {
+    res.status(e.status || 500).json({
+      error: e.code || "register_failed",
+      detail: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+app.post("/v1/auth/login", async (req, res) => {
+  try {
+    const user = await authenticateUser({
+      login: req.body?.login ?? req.body?.username ?? req.body?.email,
+      password: req.body?.password,
+    });
+    const { token } = createSession(user.userId);
+    setSessionCookie(res, token);
+    const store = loadStore();
+    res.json({
+      ok: true,
+      user: publicUser(user),
+      balanceCents: getBalance(store, user.userId),
+      currency: "USD",
+      usage: summarizeUsage(store, user.userId),
+    });
+  } catch (e) {
+    res.status(e.status || 500).json({
+      error: e.code || "login_failed",
+      detail: e instanceof Error ? e.message : String(e),
+    });
+  }
+});
+
+app.post("/v1/auth/logout", (req, res) => {
+  const cookies = parseCookies(req);
+  destroySession(cookies[COOKIE_NAME]);
+  clearAuthCookie(res);
+  res.json({ ok: true });
+});
+
+app.get("/v1/auth/me", (req, res) => {
+  const session = resolveSessionUser(req);
+  if (!session) {
+    clearAuthCookie(res);
+    res.status(401).json({ error: "not_authenticated" });
+    return;
+  }
+  const { user, store } = session;
+  res.json({
+    ok: true,
+    user: publicUser(user),
+    balanceCents: getBalance(store, user.userId),
+    currency: "USD",
+    usage: summarizeUsage(store, user.userId),
+    inboxPending: pollMessages(user.userId).length,
+  });
 });
 
 app.get("/v1/balance", requireServiceAuth, (req, res) => {
@@ -809,10 +1144,17 @@ app.post("/v1/checkout", requireServiceAuth, async (req, res) => {
  * GET /pay?userId=...&amountCents=500
  */
 app.get("/pay", async (req, res) => {
-  const userId = String(req.query.userId || "").trim();
+  let userId = String(req.query.userId || "").trim();
+  if (!userId) {
+    const session = resolveSessionUser(req);
+    if (session) userId = session.user.userId;
+  }
   const amountCents = Number(req.query.amountCents || 500);
   if (!userId) {
-    res.redirect(302, `/recharge?error=${encodeURIComponent("缺少 userId，请从 MadeClaw 打开充值链接")}`);
+    res.redirect(
+      302,
+      `/login?next=${encodeURIComponent(`/recharge`)}&error=${encodeURIComponent("请先登录，或从 MadeClaw App 打开带 userId 的充值链接")}`,
+    );
     return;
   }
   if (!Number.isFinite(amountCents) || amountCents < 1) {

@@ -10,16 +10,20 @@
     <header class="top">
       <a class="brand" href="/">MadeClaw</a>
       <nav class="nav">
+        <a href="/features">功能</a>
+        <a href="/download">下载</a>
         <a href="/recharge">充值</a>
+        <span data-auth-nav><a href="/login">登录</a></span>
       </nav>
     </header>
     <main class="panel">
       <h1>充值</h1>
-      <p>支付完成后余额记入 MadeClaw 独立账户。请使用 App 中的 userId，勿填错。</p>
+      <p>支付完成后余额记入 MadeClaw 独立账户。已登录时自动使用你的 userId。</p>
       <div id="alert" class="alert alert-err" hidden></div>
+      <p id="session-hint" class="how-note" hidden></p>
       <form id="pay-form" method="get" action="/pay">
         <label for="userId">用户 ID（userId）</label>
-        <input id="userId" name="userId" required placeholder="例如 local-operator" autocomplete="username" />
+        <input id="userId" name="userId" required placeholder="登录后自动填入" autocomplete="username" />
         <label for="amountCents">金额（美分 / 分）</label>
         <input
           id="amountCents"
@@ -35,18 +39,27 @@
       </form>
     </main>
     <footer class="foot">支付由 Waffo 处理 · 账本仅写入本服务</footer>
+    <script src="/site-auth.js"></script>
     <script>
       const params = new URLSearchParams(location.search);
-      const userId = params.get("userId");
+      const userIdEl = document.getElementById("userId");
       const amount = params.get("amountCents");
       const error = params.get("error");
-      if (userId) document.getElementById("userId").value = userId;
+      if (params.get("userId")) userIdEl.value = params.get("userId");
       if (amount) document.getElementById("amountCents").value = amount;
       if (error) {
         const el = document.getElementById("alert");
         el.hidden = false;
         el.textContent = error;
       }
+      MadeClawAuth.paintNav().then((me) => {
+        if (me?.user && !params.get("userId")) {
+          userIdEl.value = me.user.userId;
+          const hint = document.getElementById("session-hint");
+          hint.hidden = false;
+          hint.textContent = `已登录为 ${me.user.username} · 余额 ${MadeClawAuth.formatUsd(me.balanceCents)}`;
+        }
+      });
     </script>
   </body>
 </html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>注册 · MadeClaw</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page">
+    <header class="top">
+      <a class="brand" href="/">MadeClaw</a>
+      <nav class="nav">
+        <a href="/download">下载</a>
+        <a href="/login">登录</a>
+      </nav>
+    </header>
+    <main class="panel">
+      <h1>注册</h1>
+      <p>创建账号后获得稳定 <code>userId</code>，与 App 扣费 / 充值账本绑定。</p>
+      <div id="alert" class="alert alert-err" hidden></div>
+      <form id="form">
+        <label for="username">用户名</label>
+        <input id="username" required pattern="[A-Za-z0-9_]{3,32}" autocomplete="username" placeholder="3–32 位字母数字或下划线" />
+        <label for="email">邮箱（可选）</label>
+        <input id="email" type="email" autocomplete="email" />
+        <label for="password">密码</label>
+        <input id="password" type="password" required minlength="8" autocomplete="new-password" />
+        <button class="btn btn-primary" type="submit" style="width: 100%">创建账号</button>
+      </form>
+      <p class="how-note">已有账号？<a href="/login">登录</a></p>
+    </main>
+    <footer class="foot">密码仅存 scrypt 哈希 · 永不存明文</footer>
+    <script src="/site-auth.js"></script>
+    <script>
+      document.getElementById("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const alertEl = document.getElementById("alert");
+        alertEl.hidden = true;
+        try {
+          await MadeClawAuth.register(
+            document.getElementById("username").value,
+            document.getElementById("email").value,
+            document.getElementById("password").value,
+          );
+          location.href = "/account";
+        } catch (err) {
+          alertEl.hidden = false;
+          alertEl.textContent = String(err.message || err);
+        }
+      });
+    </script>
+  </body>
+</html>
