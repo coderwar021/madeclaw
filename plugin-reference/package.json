@@ -1,0 +1,10 @@
+{
+  "name": "madeclaw-billing-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MadeClaw balance gate for OpenClaw Gateway",
+  "openclaw": {
+    "extensions": ["./index.js"]
+  }
+}

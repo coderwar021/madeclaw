@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MadeClaw</title>
+    <meta name="description" content="MadeClaw — 桌面 AI 助手。App 内使用，网站充值，余额独立。" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page">
+    <header class="top">
+      <a class="brand" href="/">MadeClaw</a>
+      <nav class="nav">
+        <a href="/recharge">充值</a>
+        <a href="/health">状态</a>
+      </nav>
+    </header>
+    <section class="hero">
+      <h1>MadeClaw</h1>
+      <p class="lead">
+        在桌面 App 里对话与执行；需要额度时打开本站充值。余额记入 MadeClaw 独立账本，与 MadeAPI 钱包分开。
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/recharge">立即充值</a>
+        <a class="btn btn-ghost" href="#how">了解流程</a>
+      </div>
+    </section>
+    <section id="how" class="panel" style="margin-top: 0; margin-bottom: 3rem">
+      <h1>如何充值</h1>
+      <p>
+        1. 在 MadeClaw App 使用「充值」或工具 <code>madeclaw_recharge</code>，会打开带
+        <code>userId</code> 的链接。<br />
+        2. 本站创建支付会话并跳转 Waffo 收银台。<br />
+        3. 支付成功后，Webhook 将金额记入你的 MadeClaw 余额。<br />
+        4. 返回 App 继续使用；余额与扣费使用同一套 API。
+      </p>
+      <p style="margin: 0">
+        也可手动打开
+        <a href="/recharge">充值页</a>，填入 App 显示的 userId。
+      </p>
+    </section>
+    <footer class="foot">MadeClaw Online · 独立余额 · creditsMadeApiWallet: false</footer>
+  </body>
+</html>

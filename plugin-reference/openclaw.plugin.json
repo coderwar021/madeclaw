@@ -1,0 +1,53 @@
+{
+  "id": "madeclaw-billing",
+  "name": "MadeClaw Billing",
+  "description": "Gates MadeAPI runs against the MadeClaw independent balance service; recharge opens the website pay page.",
+  "activation": {
+    "onStartup": true
+  },
+  "contracts": {
+    "tools": ["madeclaw_balance", "madeclaw_recharge"]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "billingBaseUrl": {
+        "type": "string",
+        "default": "https://YOUR-MADECLAW.up.railway.app",
+        "description": "MadeClaw billing public origin (no path). Same host as payBaseUrl. APIs are /v1/balance and /v1/debit."
+      },
+      "serviceToken": {
+        "type": "string",
+        "description": "Bearer token for billing service; must equal server BILLING_SERVICE_TOKEN."
+      },
+      "payBaseUrl": {
+        "type": "string",
+        "default": "https://YOUR-MADECLAW.up.railway.app",
+        "description": "Same public origin as billingBaseUrl (no /pay). Plugin appends /pay?userId=&amountCents=."
+      },
+      "userId": {
+        "type": "string",
+        "default": "local-operator",
+        "description": "MadeClaw balance account id for this Gateway; must match pay query userId."
+      },
+      "runFeeCents": {
+        "type": "integer",
+        "minimum": 1,
+        "default": 1,
+        "description": "Fixed cents charged per successful agent run on MadeAPI."
+      },
+      "skipWhenCustomApi": {
+        "type": "boolean",
+        "default": true,
+        "description": "Skip run gate/debit when the run provider is not madeapi (uses ctx.modelProviderId, else primary)."
+      },
+      "defaultPayAmountCents": {
+        "type": "integer",
+        "minimum": 1,
+        "default": 500,
+        "description": "Default amount suggested on the pay page."
+      }
+    }
+  }
+}

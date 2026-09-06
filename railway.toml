@@ -1,0 +1,12 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# Attach a Railway Volume at mount path /data so BILLING_DB=/data/balance.json survives restarts.
+# Without a volume, the JSON ledger is ephemeral (lost on redeploy).

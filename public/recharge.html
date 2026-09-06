@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>充值 · MadeClaw</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page">
+    <header class="top">
+      <a class="brand" href="/">MadeClaw</a>
+      <nav class="nav">
+        <a href="/recharge">充值</a>
+      </nav>
+    </header>
+    <main class="panel">
+      <h1>充值</h1>
+      <p>支付完成后余额记入 MadeClaw 独立账户。请使用 App 中的 userId，勿填错。</p>
+      <div id="alert" class="alert alert-err" hidden></div>
+      <form id="pay-form" method="get" action="/pay">
+        <label for="userId">用户 ID（userId）</label>
+        <input id="userId" name="userId" required placeholder="例如 local-operator" autocomplete="username" />
+        <label for="amountCents">金额（美分 / 分）</label>
+        <input
+          id="amountCents"
+          name="amountCents"
+          type="number"
+          min="1"
+          step="1"
+          value="500"
+          required
+        />
+        <p class="hint">500 = $5.00 USD。与 MadeClaw 插件 defaultPayAmountCents 一致即可。</p>
+        <button class="btn btn-primary" type="submit" style="width: 100%">前往支付</button>
+      </form>
+    </main>
+    <footer class="foot">支付由 Waffo 处理 · 账本仅写入本服务</footer>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const userId = params.get("userId");
+      const amount = params.get("amountCents");
+      const error = params.get("error");
+      if (userId) document.getElementById("userId").value = userId;
+      if (amount) document.getElementById("amountCents").value = amount;
+      if (error) {
+        const el = document.getElementById("alert");
+        el.hidden = false;
+        el.textContent = error;
+      }
+    </script>
+  </body>
+</html>
