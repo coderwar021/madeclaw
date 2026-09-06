@@ -5,6 +5,7 @@
  * Production hardening vs local billing prototype:
  * - Bearer auth fail-closed when BILLING_SERVICE_TOKEN empty in production
  * - Webhook requires WAFFO_WEBHOOK_SECRET in production
+ * - Waffo merchant/key optional at boot; /pay and /v1/checkout fail closed if unset
  * - simulatePaid disabled unless BILLING_ALLOW_SIMULATE=1
  * - Optional hold/capture/release for pre-debit (plugin should migrate; see README)
  */
@@ -13,6 +14,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
+import {
+  MADECLAW_DEFAULT_SERVICE_TOKEN,
+  MADECLAW_PUBLIC_ORIGIN,
+} from "./defaults.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
@@ -46,17 +51,20 @@ const MERCHANT_ID = process.env.WAFFO_MERCHANT_ID || "";
 const STORE_ID = process.env.WAFFO_STORE_ID || "STO_1WjWkflwKXm3BodanakF0J";
 const PRODUCT_ID = process.env.WAFFO_PRODUCT_ID || "PROD_3YaLDdlAPjTcANQOcxoo3G";
 const API_BASE = (process.env.WAFFO_API_BASE || "https://api.waffo.ai").replace(/\/$/, "");
-const SERVICE_TOKEN = process.env.BILLING_SERVICE_TOKEN || "";
+// OOB: product default when BILLING_SERVICE_TOKEN unset — must match plugin serviceToken.
+const SERVICE_TOKEN =
+  (process.env.BILLING_SERVICE_TOKEN || "").trim() || MADECLAW_DEFAULT_SERVICE_TOKEN;
 const WEBHOOK_SECRET = process.env.WAFFO_WEBHOOK_SECRET || "";
 const ALLOW_SIMULATE = process.env.BILLING_ALLOW_SIMULATE === "1";
 const REQUIRE_AUTH =
   process.env.BILLING_REQUIRE_AUTH === "1" ||
   (IS_PROD && process.env.BILLING_REQUIRE_AUTH !== "0");
-const PUBLIC_BASE = (process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`).replace(
-  /\/$/,
-  "",
-);
+// Railway OOB origin; override with PUBLIC_BASE_URL (no trailing slash).
+const PUBLIC_BASE = (process.env.PUBLIC_BASE_URL || MADECLAW_PUBLIC_ORIGIN).replace(/\/$/, "");
 const PAY_SUCCESS_URL = process.env.PAY_SUCCESS_URL || `${PUBLIC_BASE}/pay/success`;
+
+/** Lazy: Waffo is optional at boot; only checkout/pay requires merchant + key. */
+let cachedPrivateKey = null;
 
 function resolvePrivateKey() {
   const inline = process.env.WAFFO_PRIVATE_KEY || "";
@@ -68,24 +76,47 @@ function resolvePrivateKey() {
     process.env.WAFFO_PRIVATE_KEY_PATH || "./secrets/waffo-private.pem",
   );
   if (!fs.existsSync(keyPath)) {
-    throw new Error(
+    const err = new Error(
       `WAFFO private key missing: set WAFFO_PRIVATE_KEY or WAFFO_PRIVATE_KEY_PATH (${keyPath})`,
     );
+    err.code = "waffo_not_configured";
+    err.status = 503;
+    throw err;
   }
   return fs.readFileSync(keyPath, "utf8");
 }
 
-if (!MERCHANT_ID) {
-  throw new Error("WAFFO_MERCHANT_ID required");
-}
-if (IS_PROD && !SERVICE_TOKEN) {
-  throw new Error("BILLING_SERVICE_TOKEN required in production (auth fail-closed)");
-}
-if (IS_PROD && !WEBHOOK_SECRET) {
-  throw new Error("WAFFO_WEBHOOK_SECRET required in production");
+function getPrivateKey() {
+  if (cachedPrivateKey) return cachedPrivateKey;
+  cachedPrivateKey = resolvePrivateKey();
+  return cachedPrivateKey;
 }
 
-const PRIVATE_KEY = resolvePrivateKey();
+function isWaffoConfigured() {
+  if (!MERCHANT_ID) return false;
+  if ((process.env.WAFFO_PRIVATE_KEY || "").trim()) return true;
+  const keyPath = path.resolve(
+    appRoot,
+    process.env.WAFFO_PRIVATE_KEY_PATH || "./secrets/waffo-private.pem",
+  );
+  return fs.existsSync(keyPath);
+}
+
+function assertWaffoConfigured() {
+  if (!MERCHANT_ID) {
+    const err = new Error(
+      "WAFFO_MERCHANT_ID is not configured — set Railway env vars to enable checkout",
+    );
+    err.code = "waffo_not_configured";
+    err.status = 503;
+    throw err;
+  }
+  getPrivateKey();
+}
+
+// Boot does not require WAFFO_* or webhook secret. Auth uses env or OOB default token.
+// Webhook fail-closed at request time (requireWebhookAuth) when secret unset in production.
+
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 /** @typedef {{
@@ -93,11 +124,26 @@ fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
  *   ledger: Array<Record<string,unknown>>,
  *   checkouts: Record<string,Record<string,unknown>>,
  *   ledgerRefs: Record<string,true>,
- *   holds: Record<string,{userId:string,amountCents:number,createdAt:string,meta?:unknown}>
+ *   holds: Record<string,{userId:string,amountCents:number,createdAt:string,meta?:unknown}>,
+ *   usage: Array<Record<string,unknown>>,
+ *   usageRefs: Record<string,true>,
+ *   messages: Array<Record<string,unknown>>
  * }} Store */
 
+const MAX_USAGE_EVENTS = 5000;
+const MAX_INBOX_MESSAGES = 2000;
+
 function emptyStore() {
-  return { accounts: {}, ledger: [], checkouts: {}, ledgerRefs: {}, holds: {} };
+  return {
+    accounts: {},
+    ledger: [],
+    checkouts: {},
+    ledgerRefs: {},
+    holds: {},
+    usage: [],
+    usageRefs: {},
+    messages: [],
+  };
 }
 
 function loadStore() {
@@ -110,6 +156,9 @@ function loadStore() {
       checkouts: raw.checkouts || {},
       ledgerRefs: raw.ledgerRefs || {},
       holds: raw.holds || {},
+      usage: Array.isArray(raw.usage) ? raw.usage : [],
+      usageRefs: raw.usageRefs || {},
+      messages: Array.isArray(raw.messages) ? raw.messages : [],
     };
   } catch {
     return emptyStore();
@@ -320,12 +369,143 @@ function releaseHold(ref) {
   return { status: "released", userId: row.userId, balanceCents: after };
 }
 
+function nTokens(v) {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+function summarizeUsage(store, userId) {
+  const rows = store.usage.filter((u) => u.userId === userId);
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cacheReadTokens = 0;
+  let cacheWriteTokens = 0;
+  let totalTokens = 0;
+  let events = 0;
+  for (const u of rows) {
+    events += 1;
+    inputTokens += nTokens(u.inputTokens);
+    outputTokens += nTokens(u.outputTokens);
+    cacheReadTokens += nTokens(u.cacheReadTokens);
+    cacheWriteTokens += nTokens(u.cacheWriteTokens);
+    totalTokens += nTokens(u.totalTokens);
+  }
+  if (totalTokens === 0) totalTokens = inputTokens + outputTokens + cacheReadTokens + cacheWriteTokens;
+  return {
+    events,
+    inputTokens,
+    outputTokens,
+    cacheReadTokens,
+    cacheWriteTokens,
+    totalTokens,
+  };
+}
+
+/** Record token/usage event. Idempotent when ref set. */
+function recordUsage(payload) {
+  const userId = String(payload.userId || "");
+  if (!userId) throw new Error("userId required");
+  const ref = payload.ref ? String(payload.ref) : "";
+  const store = loadStore();
+  if (ref && store.usageRefs[ref]) {
+    return { ok: true, duplicate: true, usage: summarizeUsage(store, userId) };
+  }
+  const inputTokens = nTokens(payload.inputTokens ?? payload.input);
+  const outputTokens = nTokens(payload.outputTokens ?? payload.output);
+  const cacheReadTokens = nTokens(payload.cacheReadTokens ?? payload.cacheRead);
+  const cacheWriteTokens = nTokens(payload.cacheWriteTokens ?? payload.cacheWrite);
+  let totalTokens = nTokens(payload.totalTokens ?? payload.total);
+  if (!totalTokens) {
+    totalTokens = inputTokens + outputTokens + cacheReadTokens + cacheWriteTokens;
+  }
+  const row = {
+    id: crypto.randomUUID(),
+    userId,
+    runId: payload.runId ? String(payload.runId) : null,
+    provider: payload.provider ? String(payload.provider) : null,
+    model: payload.model ? String(payload.model) : null,
+    inputTokens,
+    outputTokens,
+    cacheReadTokens,
+    cacheWriteTokens,
+    totalTokens,
+    ref: ref || null,
+    meta: payload.meta && typeof payload.meta === "object" ? payload.meta : {},
+    createdAt: now(),
+  };
+  store.usage.push(row);
+  if (ref) store.usageRefs[ref] = true;
+  if (store.usage.length > MAX_USAGE_EVENTS) {
+    store.usage = store.usage.slice(-MAX_USAGE_EVENTS);
+  }
+  saveStore(store);
+  return { ok: true, event: row, usage: summarizeUsage(store, userId) };
+}
+
+function enqueueMessage({ userId, title, body, meta }) {
+  const uid = String(userId || "");
+  if (!uid) throw new Error("userId required");
+  const text = String(body || "").trim();
+  if (!text) throw new Error("body required");
+  const store = loadStore();
+  const row = {
+    id: crypto.randomUUID(),
+    userId: uid,
+    title: title ? String(title).slice(0, 200) : null,
+    body: text.slice(0, 8000),
+    meta: meta && typeof meta === "object" ? meta : {},
+    createdAt: now(),
+    ackedAt: null,
+  };
+  store.messages.push(row);
+  if (store.messages.length > MAX_INBOX_MESSAGES) {
+    store.messages = store.messages.slice(-MAX_INBOX_MESSAGES);
+  }
+  saveStore(store);
+  return row;
+}
+
+function pollMessages(userId, { limit = 20, includeAcked = false } = {}) {
+  const uid = String(userId || "");
+  const store = loadStore();
+  const cap = Math.min(100, Math.max(1, Number(limit) || 20));
+  const pending = store.messages.filter(
+    (m) => m.userId === uid && (includeAcked || !m.ackedAt),
+  );
+  return pending.slice(0, cap);
+}
+
+function ackMessages(userId, messageIds) {
+  const uid = String(userId || "");
+  const ids = Array.isArray(messageIds)
+    ? messageIds.map((id) => String(id)).filter(Boolean)
+    : [];
+  if (!uid || ids.length === 0) {
+    throw new Error("userId and messageIds required");
+  }
+  const want = new Set(ids);
+  const store = loadStore();
+  let acked = 0;
+  const ts = now();
+  for (const m of store.messages) {
+    if (m.userId === uid && want.has(m.id) && !m.ackedAt) {
+      m.ackedAt = ts;
+      acked += 1;
+    }
+  }
+  saveStore(store);
+  return { acked, remaining: pollMessages(uid).length };
+}
+
 async function waffoSigned(method, apiPath, bodyObj) {
+  assertWaffoConfigured();
   const bodyStr = bodyObj === undefined ? "" : JSON.stringify(bodyObj);
   const timestamp = String(Math.floor(Date.now() / 1000));
   const bodyHash = crypto.createHash("sha256").update(bodyStr).digest("base64");
   const canonical = `${method}\n${apiPath}\n${timestamp}\n${bodyHash}`;
-  const signature = crypto.sign("sha256", Buffer.from(canonical), PRIVATE_KEY).toString("base64");
+  const signature = crypto
+    .sign("sha256", Buffer.from(canonical), getPrivateKey())
+    .toString("base64");
   const res = await fetch(`${API_BASE}${apiPath}`, {
     method,
     headers: {
@@ -361,6 +541,7 @@ function extractSession(created) {
 }
 
 async function createCheckoutSession({ userId, amountCents, currency, successUrl }) {
+  assertWaffoConfigured();
   const amount = (amountCents / 100).toFixed(2);
   const created = await waffoSigned("POST", "/v1/actions/checkout/create-session", {
     storeId: STORE_ID,
@@ -411,6 +592,7 @@ app.get("/health", (_req, res) => {
     creditsMadeApiWallet: false,
     storeId: STORE_ID,
     productId: PRODUCT_ID,
+    waffoConfigured: isWaffoConfigured(),
     authRequired: Boolean(SERVICE_TOKEN) || REQUIRE_AUTH,
     webhookAuthRequired: Boolean(WEBHOOK_SECRET) || IS_PROD,
     simulateAllowed: ALLOW_SIMULATE,
@@ -432,6 +614,10 @@ app.get("/recharge", (_req, res) => {
   sendPublic(res, "recharge.html");
 });
 
+app.get("/usage", (_req, res) => {
+  sendPublic(res, "usage.html");
+});
+
 app.get("/pay/success", (_req, res) => {
   sendPublic(res, "success.html");
 });
@@ -450,7 +636,64 @@ app.get("/v1/balance", requireServiceAuth, (req, res) => {
     balanceCents: getBalance(store, userId),
     currency: "USD",
     creditTarget: "madeclaw_balance",
+    usage: summarizeUsage(store, userId),
+    inboxPending: pollMessages(userId).length,
   });
+});
+
+app.post("/v1/usage", requireServiceAuth, (req, res) => {
+  try {
+    const result = recordUsage(req.body || {});
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.get("/v1/usage", requireServiceAuth, (req, res) => {
+  const userId = String(req.query.userId || "");
+  if (!userId) return res.status(400).json({ error: "userId required" });
+  const store = loadStore();
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+  const events = store.usage
+    .filter((u) => u.userId === userId)
+    .slice(-limit)
+    .reverse();
+  res.json({
+    userId,
+    usage: summarizeUsage(store, userId),
+    events,
+  });
+});
+
+app.post("/v1/messages", requireServiceAuth, (req, res) => {
+  try {
+    const row = enqueueMessage(req.body || {});
+    res.json({ ok: true, message: row });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.get("/v1/messages/poll", requireServiceAuth, (req, res) => {
+  const userId = String(req.query.userId || "");
+  if (!userId) return res.status(400).json({ error: "userId required" });
+  const messages = pollMessages(userId, {
+    limit: req.query.limit,
+    includeAcked: req.query.includeAcked === "1",
+  });
+  res.json({ userId, messages, count: messages.length });
+});
+
+app.post("/v1/messages/ack", requireServiceAuth, (req, res) => {
+  try {
+    const userId = String(req.body?.userId || "");
+    const messageIds = req.body?.messageIds || req.body?.ids || [];
+    const result = ackMessages(userId, messageIds);
+    res.json({ ok: true, userId, ...result });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
 });
 
 app.post("/v1/credit", requireServiceAuth, (req, res) => {
@@ -548,6 +791,12 @@ app.post("/v1/checkout", requireServiceAuth, async (req, res) => {
       creditTarget: "madeclaw_balance",
     });
   } catch (e) {
+    if (e.code === "waffo_not_configured") {
+      return res.status(503).json({
+        error: "waffo_not_configured",
+        detail: String(e.message),
+      });
+    }
     res
       .status(e.status || 500)
       .json({ error: "waffo_checkout_failed", detail: e.body || String(e.message) });
@@ -582,12 +831,18 @@ app.get("/pay", async (req, res) => {
     }
     res.redirect(302, checkoutUrl);
   } catch (e) {
-    const detail = typeof e.body === "object" ? JSON.stringify(e.body) : String(e.message || e);
+    const detail =
+      e.code === "waffo_not_configured"
+        ? String(e.message)
+        : typeof e.body === "object"
+          ? JSON.stringify(e.body)
+          : String(e.message || e);
+    const title = e.code === "waffo_not_configured" ? "支付未配置" : "支付创建失败";
     res
       .status(e.status || 500)
       .type("html")
       .send(
-        `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>支付失败</title><link rel="stylesheet" href="/styles.css"></head><body class="page"><main class="panel"><h1>支付创建失败</h1><p>请返回 MadeClaw 或稍后重试。</p><pre class="err">${detail.replace(/[<>&]/g, "")}</pre><p><a href="/recharge?userId=${encodeURIComponent(userId)}">返回充值页</a></p></main></body></html>`,
+        `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${title}</title><link rel="stylesheet" href="/styles.css"></head><body class="page"><main class="panel"><h1>${title}</h1><p>请返回 MadeClaw 或稍后重试。若为部署问题，请在 Railway 配置 WAFFO_MERCHANT_ID 与 WAFFO_PRIVATE_KEY。</p><pre class="err">${detail.replace(/[<>&]/g, "")}</pre><p><a href="/recharge?userId=${encodeURIComponent(userId)}">返回充值页</a></p></main></body></html>`,
       );
   }
 });
@@ -666,6 +921,7 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`[madeclaw-online] db=${DB_PATH}`);
   console.log(`[madeclaw-online] credits MadeAPI wallet: NO`);
   console.log(`[madeclaw-online] public=${PUBLIC_BASE}`);
+  console.log(`[madeclaw-online] waffoConfigured=${isWaffoConfigured()}`);
   console.log(`[madeclaw-online] pay=${PUBLIC_BASE}/pay?userId=demo&amountCents=500`);
   console.log(`[madeclaw-online] authRequired=${Boolean(SERVICE_TOKEN) || REQUIRE_AUTH}`);
   console.log(`[madeclaw-online] webhookAuth=${Boolean(WEBHOOK_SECRET)}`);

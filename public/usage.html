@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MadeClaw · Token 统计</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page">
+    <header class="top">
+      <a class="brand" href="/">MadeClaw</a>
+      <nav class="nav">
+        <a href="/recharge">充值</a>
+        <a href="/usage">用量</a>
+        <a href="/health">状态</a>
+      </nav>
+    </header>
+    <main class="panel">
+      <h1>Token 统计</h1>
+      <p class="lead">查询 MadeClaw 账本上报的模型用量（需 serviceToken）。</p>
+      <label>
+        userId
+        <input id="userId" type="text" value="local-operator" autocomplete="username" />
+      </label>
+      <label>
+        serviceToken
+        <input id="token" type="password" placeholder="Bearer token" autocomplete="off" />
+      </label>
+      <button class="btn btn-primary" id="go" type="button">查询</button>
+      <pre id="out" class="err" style="margin-top:1.25rem;white-space:pre-wrap"></pre>
+    </main>
+    <footer class="foot">GET /v1/usage?userId= · POST /v1/usage</footer>
+    <script>
+      const out = document.getElementById("out");
+      document.getElementById("go").addEventListener("click", async () => {
+        const userId = document.getElementById("userId").value.trim();
+        const token = document.getElementById("token").value.trim();
+        out.textContent = "…";
+        try {
+          const res = await fetch("/v1/usage?userId=" + encodeURIComponent(userId), {
+            headers: token ? { authorization: "Bearer " + token } : {},
+          });
+          const body = await res.json();
+          out.textContent = JSON.stringify(body, null, 2);
+        } catch (e) {
+          out.textContent = String(e);
+        }
+      });
+    </script>
+  </body>
+</html>

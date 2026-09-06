@@ -1,12 +1,12 @@
 {
   "id": "madeclaw-billing",
   "name": "MadeClaw Billing",
-  "description": "Gates MadeAPI runs against the MadeClaw independent balance service; recharge opens the website pay page.",
+  "description": "Gates MadeAPI runs against the MadeClaw independent balance service; recharge opens the website pay page; token usage + downlink inbox.",
   "activation": {
     "onStartup": true
   },
   "contracts": {
-    "tools": ["madeclaw_balance", "madeclaw_recharge"]
+    "tools": ["madeclaw_balance", "madeclaw_recharge", "madeclaw_usage", "madeclaw_inbox"]
   },
   "configSchema": {
     "type": "object",
@@ -14,16 +14,17 @@
     "properties": {
       "billingBaseUrl": {
         "type": "string",
-        "default": "https://YOUR-MADECLAW.up.railway.app",
-        "description": "MadeClaw billing public origin (no path). Same host as payBaseUrl. APIs are /v1/balance and /v1/debit."
+        "default": "https://madeclaw.up.railway.app",
+        "description": "MadeClaw billing public origin (no path). Same host as payBaseUrl. APIs are /v1/balance, /v1/debit, /v1/usage, /v1/messages/*."
       },
       "serviceToken": {
         "type": "string",
-        "description": "Bearer token for billing service; must equal server BILLING_SERVICE_TOKEN."
+        "default": "madeclaw-oob-service-token-v1",
+        "description": "Bearer token for billing; defaults to MADECLAW_DEFAULT_SERVICE_TOKEN (must match server BILLING_SERVICE_TOKEN or its OOB fallback)."
       },
       "payBaseUrl": {
         "type": "string",
-        "default": "https://YOUR-MADECLAW.up.railway.app",
+        "default": "https://madeclaw.up.railway.app",
         "description": "Same public origin as billingBaseUrl (no /pay). Plugin appends /pay?userId=&amountCents=."
       },
       "userId": {

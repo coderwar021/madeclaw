@@ -1,5 +1,7 @@
 # MadeClaw Online Server (Railway)
 
+> **OOB public origin:** `https://madeclaw.up.railway.app`. Waffo (`WAFFO_MERCHANT_ID` / private key) is optional at boot — `/health` and ledger APIs start without it; checkout/pay return 503 until configured.
+
 Self-contained **website + billing API + Waffo recharge** for MadeClaw operators.
 
 Deploy this folder as the Railway app root (or as the GitHub repo root that Group 3 pushes to `coderwar021/madeclaw`).

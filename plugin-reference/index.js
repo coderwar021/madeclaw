@@ -5,7 +5,14 @@
  * Ledger invariant (充值到账额度 = 可扣余额):
  *   webhook/credit(userId) → GET /v1/balance?userId → POST /v1/debit {userId}
  * all share the same MadeClaw ledger row for that userId.
+ *
+ * Also: POST /v1/usage (token stats) + GET /v1/messages/poll (消息下传).
  */
+import {
+  MADECLAW_DEFAULT_SERVICE_TOKEN,
+  MADECLAW_PUBLIC_ORIGIN,
+} from "./defaults.js";
+
 function asRecord(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
@@ -22,15 +29,19 @@ function normalizePublicOrigin(raw, fallback) {
 
 function normalizeConfig(raw) {
   const c = asRecord(raw);
-  // Local-safe code defaults. Product template / apply script set Railway origin.
-  const billingBaseUrl = normalizePublicOrigin(c.billingBaseUrl, "http://127.0.0.1:8787");
+  // Product OOB defaults — Railway origin + shared service token (no manual fill).
+  const billingBaseUrl = normalizePublicOrigin(c.billingBaseUrl, MADECLAW_PUBLIC_ORIGIN);
   const payBaseUrl = normalizePublicOrigin(
     c.payBaseUrl || c.billingBaseUrl,
-    billingBaseUrl || "http://127.0.0.1:8787",
+    billingBaseUrl || MADECLAW_PUBLIC_ORIGIN,
   );
+  const token =
+    typeof c.serviceToken === "string" && c.serviceToken.trim()
+      ? c.serviceToken.trim()
+      : MADECLAW_DEFAULT_SERVICE_TOKEN;
   return {
     billingBaseUrl,
-    serviceToken: typeof c.serviceToken === "string" ? c.serviceToken : "",
+    serviceToken: token,
     payBaseUrl,
     userId: String(c.userId || "local-operator"),
     runFeeCents: Math.max(1, Number(c.runFeeCents || 1) || 1),
@@ -83,7 +94,7 @@ async function fetchBalance(cfg) {
     err.body = body;
     throw err;
   }
-  return Number(body.balanceCents || 0);
+  return body;
 }
 
 async function postDebit(cfg, ref) {
@@ -126,6 +137,75 @@ async function postCredit(cfg, amountCents, ref, meta) {
     throw new Error(body.error || `credit_http_${res.status}`);
   }
   return Number(body.balanceCents || 0);
+}
+
+async function postUsage(cfg, payload) {
+  const res = await fetch(`${cfg.billingBaseUrl}/v1/usage`, {
+    method: "POST",
+    headers: authHeaders(cfg),
+    body: JSON.stringify({
+      userId: cfg.userId,
+      ...payload,
+      meta: { source: "madeclaw-billing-plugin", ...(payload.meta || {}) },
+    }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.error || `usage_http_${res.status}`);
+  }
+  return body;
+}
+
+async function fetchUsage(cfg) {
+  const url = `${cfg.billingBaseUrl}/v1/usage?userId=${encodeURIComponent(cfg.userId)}`;
+  const res = await fetch(url, { headers: authHeaders(cfg) });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.error || `usage_http_${res.status}`);
+  }
+  return body;
+}
+
+async function pollInbox(cfg, { limit = 20, ack = true } = {}) {
+  const url = `${cfg.billingBaseUrl}/v1/messages/poll?userId=${encodeURIComponent(cfg.userId)}&limit=${encodeURIComponent(String(limit))}`;
+  const res = await fetch(url, { headers: authHeaders(cfg) });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.error || `inbox_http_${res.status}`);
+  }
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+  if (ack && messages.length > 0) {
+    const ids = messages.map((m) => m.id).filter(Boolean);
+    await fetch(`${cfg.billingBaseUrl}/v1/messages/ack`, {
+      method: "POST",
+      headers: authHeaders(cfg),
+      body: JSON.stringify({ userId: cfg.userId, messageIds: ids }),
+    }).catch(() => null);
+  }
+  return messages;
+}
+
+function extractUsageFromMessages(messages) {
+  if (!Array.isArray(messages)) return null;
+  let input = 0;
+  let output = 0;
+  let cacheRead = 0;
+  let cacheWrite = 0;
+  let total = 0;
+  let found = false;
+  for (const msg of messages) {
+    const u = msg && typeof msg === "object" ? msg.usage || msg.tokenUsage : null;
+    if (!u || typeof u !== "object") continue;
+    found = true;
+    input += Number(u.input || u.inputTokens || 0) || 0;
+    output += Number(u.output || u.outputTokens || 0) || 0;
+    cacheRead += Number(u.cacheRead || u.cacheReadTokens || 0) || 0;
+    cacheWrite += Number(u.cacheWrite || u.cacheWriteTokens || 0) || 0;
+    total += Number(u.total || u.totalTokens || 0) || 0;
+  }
+  if (!found) return null;
+  if (!total) total = input + output + cacheRead + cacheWrite;
+  return { input, output, cacheRead, cacheWrite, total };
 }
 
 /** Build MadeClaw `/pay` URL on the configured public origin (not Open WebUI). */
@@ -171,15 +251,21 @@ function register(api) {
         additionalProperties: false,
       },
       async execute() {
-        // Always query the ledger so operators can verify 充值到账 = 可扣余额 after pay,
-        // even when skipWhenCustomApi skips run gating.
         try {
-          const balanceCents = await fetchBalance(cfg);
+          const body = await fetchBalance(cfg);
+          const balanceCents = Number(body.balanceCents || 0);
+          const usage = body.usage || {};
+          const inbox = body.inboxPending ?? 0;
+          const usageLine =
+            usage.totalTokens != null
+              ? ` Token 累计：${usage.totalTokens}（in ${usage.inputTokens || 0} / out ${usage.outputTokens || 0}）。`
+              : "";
+          const inboxLine = inbox > 0 ? ` 未读下传消息：${inbox}（用 madeclaw_inbox）。` : "";
           return {
             content: [
               {
                 type: "text",
-                text: `MadeClaw 余额：${balanceCents} 分（userId=${cfg.userId}）。充值：${payUrl(cfg)}`,
+                text: `MadeClaw 余额：${balanceCents} 分（userId=${cfg.userId}）。${usageLine}${inboxLine}充值：${payUrl(cfg)}`,
               },
             ],
           };
@@ -228,6 +314,96 @@ function register(api) {
     { name: "madeclaw_recharge" },
   );
 
+  api.registerTool(
+    {
+      name: "madeclaw_usage",
+      description: "Show MadeClaw token/usage totals reported to the billing service.",
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+      async execute() {
+        try {
+          const body = await fetchUsage(cfg);
+          const u = body.usage || {};
+          return {
+            content: [
+              {
+                type: "text",
+                text:
+                  `MadeClaw Token 统计（userId=${cfg.userId}）：` +
+                  ` events=${u.events ?? 0} total=${u.totalTokens ?? 0}` +
+                  ` in=${u.inputTokens ?? 0} out=${u.outputTokens ?? 0}` +
+                  ` cacheR=${u.cacheReadTokens ?? 0} cacheW=${u.cacheWriteTokens ?? 0}` +
+                  `\n详情：${cfg.billingBaseUrl}/usage`,
+              },
+            ],
+          };
+        } catch (e) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `无法查询用量：${e instanceof Error ? e.message : String(e)}`,
+              },
+            ],
+          };
+        }
+      },
+    },
+    { name: "madeclaw_usage" },
+  );
+
+  api.registerTool(
+    {
+      name: "madeclaw_inbox",
+      description:
+        "Poll MadeClaw server downlink messages (消息下传) for this userId and acknowledge them.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "integer", minimum: 1, maximum: 50 },
+          ack: { type: "boolean", description: "Acknowledge after fetch (default true)." },
+        },
+        additionalProperties: false,
+      },
+      async execute(_id, params) {
+        try {
+          const limit =
+            typeof params?.limit === "number" && params.limit > 0 ? params.limit : 20;
+          const ack = params?.ack !== false;
+          const messages = await pollInbox(cfg, { limit, ack });
+          if (messages.length === 0) {
+            return { content: [{ type: "text", text: "MadeClaw 收件箱为空。" }] };
+          }
+          const lines = messages.map((m, i) => {
+            const title = m.title ? `[${m.title}] ` : "";
+            return `${i + 1}. ${title}${m.body}`;
+          });
+          return {
+            content: [
+              {
+                type: "text",
+                text: `MadeClaw 下传消息（${messages.length}）${ack ? "，已 ack" : ""}：\n${lines.join("\n")}`,
+              },
+            ],
+          };
+        } catch (e) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `无法拉取下传消息：${e instanceof Error ? e.message : String(e)}`,
+              },
+            ],
+          };
+        }
+      },
+    },
+    { name: "madeclaw_inbox" },
+  );
+
   if (api.registrationMode !== "full") return;
 
   /** runIds successfully pre-debited in before_agent_run (refund only these on failure). */
@@ -245,7 +421,8 @@ function register(api) {
         return { outcome: "pass" };
       }
       // No runId yet: balance check only (debit deferred is unsafe; block if short).
-      const balanceCents = await fetchBalance(cfg);
+      const body = await fetchBalance(cfg);
+      const balanceCents = Number(body.balanceCents || 0);
       if (balanceCents < cfg.runFeeCents) {
         return {
           outcome: "block",
@@ -279,10 +456,58 @@ function register(api) {
     }
   });
 
+  // Report per-call token usage when the host emits llm_output.
+  api.on("llm_output", async (event, ctx) => {
+    if (shouldSkipBilling(api, cfg, ctx)) return;
+    const usage = event?.usage;
+    if (!usage || typeof usage !== "object") return;
+    const runId = event?.runId || ctx?.runId;
+    const callKey = event?.callId || `${runId || "run"}:${event?.model || "model"}:${Date.now()}`;
+    try {
+      await postUsage(cfg, {
+        runId,
+        provider: event?.provider || ctx?.modelProviderId,
+        model: event?.model || ctx?.modelId,
+        inputTokens: usage.input,
+        outputTokens: usage.output,
+        cacheReadTokens: usage.cacheRead,
+        cacheWriteTokens: usage.cacheWrite,
+        totalTokens: usage.total,
+        ref: `usage:llm:${callKey}`,
+      });
+    } catch (e) {
+      api.logger?.warn?.(
+        `madeclaw-billing usage report failed: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  });
+
   api.on("agent_end", async (event, ctx) => {
     if (shouldSkipBilling(api, cfg, ctx)) return;
     const runId = event?.runId || ctx?.runId;
     if (!runId) return;
+
+    // Best-effort usage from transcript if llm_output was not wired.
+    const fromMsgs = extractUsageFromMessages(event?.messages);
+    if (fromMsgs && fromMsgs.total > 0) {
+      try {
+        await postUsage(cfg, {
+          runId,
+          provider: ctx?.modelProviderId,
+          model: ctx?.modelId,
+          inputTokens: fromMsgs.input,
+          outputTokens: fromMsgs.output,
+          cacheReadTokens: fromMsgs.cacheRead,
+          cacheWriteTokens: fromMsgs.cacheWrite,
+          totalTokens: fromMsgs.total,
+          ref: `usage:run:${runId}`,
+        });
+      } catch (e) {
+        api.logger?.warn?.(
+          `madeclaw-billing run usage report failed: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    }
 
     // Failed run: refund only if this process pre-debited the same runId.
     if (event?.success === false) {
@@ -324,7 +549,7 @@ export default {
   id: "madeclaw-billing",
   name: "MadeClaw Billing",
   description:
-    "Gates MadeAPI agent runs against MadeClaw independent balance; recharge opens the website.",
+    "Gates MadeAPI agent runs against MadeClaw independent balance; recharge opens the website; reports token usage; polls downlink inbox.",
   configSchema,
   register,
 };
@@ -336,4 +561,6 @@ export const __test = {
   payUrl,
   shouldSkipBilling,
   primaryModelRef,
+  MADECLAW_PUBLIC_ORIGIN,
+  MADECLAW_DEFAULT_SERVICE_TOKEN,
 };

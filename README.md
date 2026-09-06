@@ -1,130 +1,137 @@
-# MadeClaw 线上服务（Railway 部署）
+# MadeClaw Online Server (Railway)
 
-本仓库是 **MadeClaw 官网 + 独立余额 API + Waffo 充值** 的可部署单元（Node.js / Docker）。
+Self-contained **website + billing API + Waffo recharge** for MadeClaw operators.
 
-- 账本只属于 MadeClaw（`creditsMadeApiWallet: false`），**不会**给 MadeAPI / NewAPI 加余额
-- 与 MadeAPI **只共用** Waffo 收款商户
-- 适合作为 Railway 根目录一键部署
+Deploy this folder as the Railway app root (or as the GitHub repo root that Group 3 pushes to `coderwar021/madeclaw`).
 
-English notes: [README.en.md](README.en.md) · 契约: [docs-PAY-CONTRACT.md](docs-PAY-CONTRACT.md)
+Ledger is **MadeClaw-only** (`creditsMadeApiWallet: false`). Shares Waffo merchant with MadeAPI; never credits MadeAPI wallets.
 
----
+## Endpoints
 
-## Railway 部署清单（按顺序做）
-
-1. 打开 [Railway](https://railway.app) → **New Project** → **Deploy from GitHub** → 选择本仓库 `coderwar021/madeclaw`
-2. Build 方式：已提供 `Dockerfile` + `railway.toml`（健康检查 `/health`）
-3. 在服务 **Variables** 中按下方表格填写环境变量（**不要**把真实密钥写进 Git）
-4. 添加 **Volume**，挂载路径设为 `/data`（对应 `BILLING_DB=/data/balance.json`）
-5. 部署成功后记下公网域名，例如 `https://xxxx.up.railway.app`
-6. 在 Waffo 后台配置 Webhook：  
-   `https://xxxx.up.railway.app/v1/webhooks/waffo`  
-   请求头 `Authorization: Bearer <与 WAFFO_WEBHOOK_SECRET 相同>`
-7. 浏览器访问 `https://xxxx.up.railway.app/health`，确认 JSON 中 `"creditsMadeApiWallet": false`
-8. 小额试充：打开 `/recharge` 或 `/pay?userId=test&amountCents=100`
-9. 把域名写回本机 MadeClaw 插件配置（见文末）
-
-> 没有 Volume 时余额文件会在每次重新部署后丢失。
-
----
-
-## 必须在 Railway 设置的环境变量
-
-| 变量 | 说明 |
-| --- | --- |
-| `PORT` | Railway 通常自动注入，可不管 |
-| `NODE_ENV` | 填 `production` |
-| `PUBLIC_BASE_URL` | `https://你的Railway域名`（**无**末尾斜杠） |
-| `BILLING_DB` | `/data/balance.json` |
-| `BILLING_SERVICE_TOKEN` | 自拟强随机串；与 MadeClaw 插件 `serviceToken` **必须相同** |
-| `WAFFO_MERCHANT_ID` | Waffo 商户 ID |
-| `WAFFO_PRIVATE_KEY` | 整段 PEM 私钥内容（推荐在 Railway 多行变量里粘贴） |
-| `WAFFO_STORE_ID` | 店铺 ID（见 `.env.example` 默认值） |
-| `WAFFO_PRODUCT_ID` | 商品 ID（见 `.env.example` 默认值） |
-| `WAFFO_API_BASE` | 一般 `https://api.waffo.ai` |
-| `WAFFO_WEBHOOK_SECRET` | 自拟；Webhook 鉴权用 |
-| `BILLING_ALLOW_SIMULATE` | 生产环境务必 `0` 或不设置 |
-
-可选：`PAY_SUCCESS_URL`、`WAFFO_PRIVATE_KEY_PATH`（仅本地文件路径调试用，Railway 优先用 `WAFFO_PRIVATE_KEY`）。
-
-完整注释见 [`.env.example`](.env.example)。
-
-**禁止提交**：`.env`、`*.pem`、真实 Token、MadeAPI 密钥。
-
----
-
-## 主要接口
-
-| 方法 | 路径 | 鉴权 | 用途 |
+| Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| GET | `/` | 公开 | 落地页 |
-| GET | `/recharge` | 公开 | 中文充值页 |
-| GET | `/pay?userId=&amountCents=` | 公开 | 创建 Waffo 收银台并 302 |
-| GET | `/pay/success` | 公开 | 支付完成页 |
-| GET | `/health` | 公开 | 探活 |
-| GET | `/v1/balance` | Bearer | 查余额 |
-| POST | `/v1/credit` / `/v1/debit` | Bearer | 入账 / 扣费 |
-| POST | `/v1/hold` / `/v1/capture` / `/v1/release` | Bearer | 预扣 / 确认 / 释放 |
-| POST | `/v1/checkout` | Bearer | 服务端创建 checkout |
-| POST | `/v1/webhooks/waffo` | Webhook Secret | 支付成功入账 |
+| GET | `/` | public | Landing |
+| GET | `/recharge` | public | Recharge form (Chinese) |
+| GET | `/pay?userId=&amountCents=` | public | Create Waffo checkout → 302 |
+| GET | `/pay/success` | public | Post-pay page |
+| GET | `/health` | public | Railway health |
+| GET | `/v1/balance?userId=` | Bearer | Balance |
+| POST | `/v1/credit` | Bearer | Ops/test credit |
+| POST | `/v1/debit` | Bearer | Run fee debit (plugin today) |
+| POST | `/v1/hold` | Bearer | Pre-debit reserve |
+| POST | `/v1/capture` | Bearer | Finalize hold |
+| POST | `/v1/release` | Bearer | Refund hold |
+| POST | `/v1/checkout` | Bearer | Server-side checkout create |
+| POST | `/v1/webhooks/waffo` | webhook secret | Paid → credit ledger |
 
-Bearer：`Authorization: Bearer ${BILLING_SERVICE_TOKEN}`
+Bearer: `Authorization: Bearer ${BILLING_SERVICE_TOKEN}`  
+Webhook: `Authorization: Bearer ${WAFFO_WEBHOOK_SECRET}` or header `X-Webhook-Secret`
 
----
+## Production hardening (vs local `billing/` prototype)
 
-## 拿到 Railway 域名后：MadeClaw 客户端怎么填
+- **Auth**: Bearer required when `BILLING_SERVICE_TOKEN` is set (or OOB default from `defaults.js`). Empty custom token falls back to the shared OOB token.
+- **Webhook auth**: fail-closed at request time in production if `WAFFO_WEBHOOK_SECRET` unset (503); wrong secret → 401. Not required to boot.
+- **Waffo checkout**: `WAFFO_MERCHANT_ID` / private key optional at boot — only `/pay` and `/v1/checkout` fail closed (503) when unset.
+- **`simulatePaid`**: only when `BILLING_ALLOW_SIMULATE=1` (keep unset in prod).
+- **`/pay` owned here**: point `payBaseUrl` at this service — do not use Open WebUI.
+- **Hold API**: optional formal reserve (`/v1/hold` + capture/release). Current plugin (Group 2) already **pre-debits** via `POST /v1/debit` on `before_agent_run` with `ref=run:{runId}` and refunds failed runs — that closes the old post-run race when `runId` is present.
 
-把下面的 `https://你的域名` 换成真实域名（无尾斜杠）：
+### Debit timing
 
-```json
-{
-  "billingBaseUrl": "https://你的域名",
-  "payBaseUrl": "https://你的域名/pay",
-  "serviceToken": "<与 BILLING_SERVICE_TOKEN 相同>",
-  "userId": "<每个用户独立的 id>"
-}
-```
+Prefer gate-time debit (or hold) with idempotent `ref`. Do not rely on post-run-only debit.
 
-或环境变量：`MADECLAW_PAY_URL=https://你的域名/pay`
+## Env vars
 
-插件参考代码见 `plugin-reference/`（跑在本机 Gateway，不是 Railway 容器内）。
+See [`.env.example`](.env.example). Required on Railway:
 
----
+| Variable | Notes |
+| --- | --- |
+| `PORT` | Railway sets automatically |
+| `NODE_ENV` | `production` |
+| `PUBLIC_BASE_URL` | Optional; defaults to `https://madeclaw.up.railway.app` (no trailing slash) |
+| `BILLING_SERVICE_TOKEN` | Optional; defaults to OOB token in `src/defaults.js` (must match plugin `serviceToken`) |
+| `BILLING_DB` | `/data/balance.json` with volume |
+| `WAFFO_MERCHANT_ID` / `WAFFO_PRIVATE_KEY` | Optional at boot — `/health`, ledger APIs, and UI work without them; only `/pay` + `/v1/checkout` need them |
+| `WAFFO_STORE_ID` / `WAFFO_PRODUCT_ID` | Defaults in `.env.example` |
+| `WAFFO_WEBHOOK_SECRET` | Required for webhook credit path (request-time fail-closed in production); not required to boot |
+| `BILLING_ALLOW_SIMULATE` | Must be `0` or unset in prod |
 
-## 本地试跑（可选）
+**Do not** commit PEM files, tokens, or MadeAPI keys.
 
-```bash
-cp .env.example .env
-# 填写变量；本地可用 WAFFO_PRIVATE_KEY_PATH 指向私钥文件（不要提交该文件）
-npm install
-npm run smoke   # 期望打印 SMOKE_OK
-npm start
-```
+### SQLite / persistence
 
-Docker：
+Store is a **JSON file ledger** (portable, no native build). On Railway:
+
+1. Create a Volume, mount path `/data`
+2. Set `BILLING_DB=/data/balance.json`
+
+Without a volume, balance is **ephemeral** (lost on redeploy). Postgres is not required.
+
+## Railway deploy
+
+1. Push this folder as the repo root (or set Railway Root Directory to `railway-app` if nested).
+2. New Project → Deploy from GitHub (`coderwar021/madeclaw`).
+3. Add variables from `.env.example` (real secrets in Railway UI only).
+4. Add Volume `/data`.
+5. In Waffo dashboard, webhook URL:  
+   `https://<railway-domain>/v1/webhooks/waffo`  
+   with `Authorization: Bearer <WAFFO_WEBHOOK_SECRET>` (or `?secret=` if the provider only supports query).
+6. Confirm `GET https://<domain>/health` → `"creditsMadeApiWallet": false`.
+7. Smoke recharge: open `/pay?userId=test&amountCents=100` (small live amount) or use `/recharge`.
+
+### Dockerfile
 
 ```bash
 docker build -t madeclaw-online .
 docker run --rm -p 8787:8787 \
-  -e NODE_ENV=production \
   -e BILLING_SERVICE_TOKEN=dev \
   -e WAFFO_WEBHOOK_SECRET=dev \
-  -e WAFFO_MERCHANT_ID=你的商户ID \
-  -e WAFFO_PRIVATE_KEY="$(cat /path/to/waffo-private.pem)" \
+  -e WAFFO_MERCHANT_ID=... \
+  -e WAFFO_PRIVATE_KEY="$(cat secrets/waffo-private.pem)" \
   -e PUBLIC_BASE_URL=http://127.0.0.1:8787 \
   -e BILLING_DB=/tmp/balance.json \
+  -e NODE_ENV=production \
   madeclaw-online
 ```
 
----
+## MadeClaw client wiring
 
-## 仓库内容
+`billingBaseUrl` and `payBaseUrl` must be the **same public origin** (no `/pay` suffix — plugin appends `/pay` and `/v1/*`):
 
-| 路径 | 说明 |
+```json
+{
+  "billingBaseUrl": "https://<railway-domain>",
+  "payBaseUrl": "https://<railway-domain>",
+  "serviceToken": "<same as BILLING_SERVICE_TOKEN>",
+  "userId": "<per-operator id>"
+}
+```
+
+Or env: `MADECLAW_PUBLIC_ORIGIN=https://<railway-domain>`.
+
+After recharge + webhook, `madeclaw_balance` must match ledger deductions from `/v1/debit`.
+
+## Local
+
+```bash
+cd railway-app
+cp .env.example .env
+# fill WAFFO_PRIVATE_KEY_PATH or WAFFO_PRIVATE_KEY; for smoke no real Waffo needed
+npm install
+npm run smoke   # SMOKE_OK
+NODE_ENV=development BILLING_REQUIRE_AUTH=1 npm start
+```
+
+## Group handoff
+
+| Group | Owns |
 | --- | --- |
-| `Dockerfile` / `railway.toml` | Railway 构建与健康检查 |
-| `src/server.js` | 网站 + billing API |
-| `public/` | 落地页 / 充值页 / 成功页 |
-| `.env.example` | 环境变量模板 |
-| `plugin-reference/` | MadeClaw Gateway 插件参考 |
-| `docs-*.md` | 支付契约与架构说明 |
+| **1 (this)** | Deployable online server in this folder |
+| **2** | Client/plugin defaults → Railway origin; `serviceToken`/`userId` match; pre-debit already preferred |
+| **3** | Git push to `git@github.com:coderwar021/madeclaw.git` (repo root = this app, or set Railway root to `railway-app`) |
+
+## Related docs
+
+- Parent contract: [`../PAY-CONTRACT.md`](../PAY-CONTRACT.md)
+- Architecture: [`../ARCHITECTURE-billing.md`](../ARCHITECTURE-billing.md)
+- Local prototype (non-prod): [`../billing/`](../billing/)

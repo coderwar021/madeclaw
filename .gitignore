@@ -1,9 +1,7 @@
 node_modules/
 .env
-data/*.json
-data/*.sqlite
-data/*.sqlite-*
-data/*.pem
+secrets/
 *.pem
-!data/.gitkeep
+data/*.json
+data/*.sqlite*
 .DS_Store
