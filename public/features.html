@@ -4,12 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>功能 · MadeClaw</title>
+    <meta name="description" content="MadeClaw 功能：桌面执行、独立余额、充值与用量。" />
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="page">
     <div class="scroll-progress" aria-hidden="true"><div class="bar"></div></div>
     <header class="top">
-      <a class="brand" href="/">MadeClaw</a>
+      <a class="brand" href="/">
+        <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
+        <span>MadeClaw</span>
+      </a>
       <nav class="nav">
         <a href="/features">功能</a>
         <a href="/models">模型</a>
@@ -25,8 +30,8 @@
           <p class="eyebrow">Features</p>
           <h1 class="page-title">功能介绍</h1>
           <p class="band-lead">
-            MadeClaw 把「干活」留在桌面，「账号与钱」留在本站。开箱连 Railway 官网，不跟 MadeAPI
-            钱包混账。
+            MadeClaw 将执行留在桌面，将账号与结算留在官网。开箱连接 MadeClaw
+            官网服务，余额与 MadeAPI 钱包严格隔离。
           </p>
         </div>
       </section>
@@ -35,50 +40,50 @@
         <div class="band-inner scroll-reveal">
           <ul class="feature-blocks">
             <li>
-              <h3>App + Control UI 双端</h3>
-              <p>桌面 App 日常对话与执行；Control UI / Gateway 管会话、模型与插件状态。</p>
+              <h3>App + Control UI</h3>
+              <p>桌面客户端负责日常对话与执行；Control UI / Gateway 管理会话、模型与插件状态。</p>
             </li>
             <li>
               <h3>独立余额</h3>
               <p>
-                充值与扣费只写本站账本（<code>creditsMadeApiWallet: false</code>）。同一
-                <code>userId</code> 贯穿支付与运行。
+                充值与扣费只写入本站账本。同一 <code>userId</code> 贯穿支付与运行，不与第三方钱包混用。
               </p>
             </li>
             <li>
-              <h3>充值</h3>
+              <h3>安全充值</h3>
               <p>
-                App 内打开充值链接或本站 <a href="/recharge">/recharge</a> → Waffo 收银台 → Webhook
+                通过本站 <a href="/recharge">充值</a> 或 App 内链接进入收银台；支付成功后由 Webhook
                 入账。登录后自动绑定你的 userId。
               </p>
             </li>
             <li>
-              <h3>Token 用量统计</h3>
+              <h3>Token 用量</h3>
               <p>
-                插件上报用量；官网 <a href="/usage">/usage</a> 与账号页可查看汇总。
+                客户端上报用量；官网 <a href="/usage">用量页</a> 与账号页可查看汇总。
               </p>
             </li>
             <li>
-              <h3>消息下传 inbox</h3>
-              <p>运营可经 API 下发消息，App 轮询收取，失败也有可见结果。</p>
+              <h3>消息下传</h3>
+              <p>运营可通过 API 下发消息，App 轮询收取，失败也有可见结果。</p>
             </li>
             <li>
-              <h3>开箱连本站</h3>
-              <p>
-                默认 <code>billingBaseUrl</code> / <code>payBaseUrl</code> 指向
-                madeclaw.up.railway.app；OOB serviceToken 与站点一致。
-              </p>
+              <h3>开箱即用</h3>
+              <p>默认计费与支付入口指向 MadeClaw 官网；服务令牌与站点一致，减少手工配置。</p>
             </li>
           </ul>
           <div class="cta-row" style="margin-top: 1.75rem">
-            <a class="btn btn-primary" href="/download">下载 App</a>
-            <a class="btn btn-ghost" href="/register">注册</a>
+            <a class="btn btn-primary" href="/download">下载客户端</a>
+            <a class="btn btn-ghost" href="/register">注册账号</a>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="foot">MadeClaw · 功能</footer>
+    <footer class="foot">
+      <span class="foot-brand">MadeClaw</span>
+      <span class="foot-sep">·</span>
+      功能
+    </footer>
     <script src="/site-auth.js" defer></script>
     <script src="/motion.js" defer></script>
     <script>

@@ -4,13 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>充值 · MadeClaw</title>
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="page">
     <header class="top">
-      <a class="brand" href="/">MadeClaw</a>
+      <a class="brand" href="/">
+        <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
+        <span>MadeClaw</span>
+      </a>
       <nav class="nav">
         <a href="/features">功能</a>
+        <a href="/models">模型</a>
         <a href="/download">下载</a>
         <a href="/recharge">充值</a>
         <span data-auth-nav><a href="/login">登录</a></span>
@@ -24,7 +29,7 @@
       <form id="pay-form" method="get" action="/pay">
         <label for="userId">用户 ID（userId）</label>
         <input id="userId" name="userId" required placeholder="登录后自动填入" autocomplete="username" />
-        <label for="amountCents">金额（美分 / 分）</label>
+        <label for="amountCents">金额（美分）</label>
         <input
           id="amountCents"
           name="amountCents"
@@ -34,11 +39,15 @@
           value="500"
           required
         />
-        <p class="hint">500 = $5.00 USD。与 MadeClaw 插件 defaultPayAmountCents 一致即可。</p>
-        <button class="btn btn-primary" type="submit" style="width: 100%">前往支付</button>
+        <p class="hint">500 = $5.00 USD。与 MadeClaw App 默认充值金额对齐即可。</p>
+        <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 0.5rem">前往支付</button>
       </form>
     </main>
-    <footer class="foot">支付由 Waffo 处理 · 账本仅写入本服务</footer>
+    <footer class="foot">
+      <span class="foot-brand">MadeClaw</span>
+      <span class="foot-sep">·</span>
+      安全支付 · 独立账本
+    </footer>
     <script src="/site-auth.js"></script>
     <script>
       const params = new URLSearchParams(location.search);

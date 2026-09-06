@@ -74,6 +74,19 @@ Bearer: `BILLING_SERVICE_TOKEN` or OOB `MADECLAW_DEFAULT_SERVICE_TOKEN` (`madecl
 - `simulatePaid` only when `BILLING_ALLOW_SIMULATE=1`
 - Volume: mount `/data`, set `BILLING_DB=/data/balance.json`
 
+## Railway: `WAFFO_PRIVATE_KEY` (critical)
+
+OpenSSL `error:1E08010C:DECODER routines::unsupported` almost always means the PEM in Railway is malformed (literal `\n` not unescaped, missing `BEGIN`/`END`, truncated, or extra quotes).
+
+1. In Railway → Variables, set **`WAFFO_PRIVATE_KEY`** to the **full** private key PEM.
+2. Either paste **multiline** PEM, or one line with `\n` escapes between lines.
+3. Headers must be `-----BEGIN PRIVATE KEY-----` (PKCS#8) or `-----BEGIN RSA PRIVATE KEY-----` (PKCS#1).
+4. Also set `WAFFO_MERCHANT_ID` (and store/product IDs if not using defaults).
+5. Redeploy. `/health` still boots if key is wrong; `/pay` returns a friendly Chinese error and logs the decode detail server-side.
+6. Verify with `npm run test:waffo-key` locally (synthetic key only).
+
+**Do not** commit real PEM files or paste merchant keys into git.
+
 ## Env
 
 See [`.env.example`](.env.example). **Do not** commit PEM files, tokens, or MadeAPI keys.

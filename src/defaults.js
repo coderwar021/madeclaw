@@ -24,4 +24,46 @@ export const MADECLAW_DOWNLOADS = {
   windowsX64: `${MADECLAW_RELEASE_BASE}/MadeClaw-Windows-x64-Setup.exe`,
   windowsArm64: `${MADECLAW_RELEASE_BASE}/MadeClaw-Windows-arm64-Setup.exe`,
   sha256Sums: "/downloads/SHA256SUMS.txt",
+  /** Dev-tool installers / docs hosted on this site (not Teamo). */
+  tools: {
+    "codex-client": {
+      id: "codex-client",
+      title: "Codex 客户端",
+      note: "配置 ~/.codex/config.toml → madeapi（见 /v1/uamgo/connect）",
+      urls: {
+        docs: "/download#tools-codex-client",
+        // Official Codex installers when mirrored; placeholders until Release assets land.
+        mac: `${MADECLAW_RELEASE_BASE}/Codex-macOS.dmg`,
+        win: `${MADECLAW_RELEASE_BASE}/Codex-Windows-Setup.exe`,
+      },
+    },
+    "claude-code": {
+      id: "claude-code",
+      title: "Claude Code 命令行",
+      note: "npm i -g @anthropic-ai/claude-code；连接写入 ANTHROPIC_* → madeapi.com",
+      urls: {
+        docs: "/download#tools-claude-code",
+        npm: "https://www.npmjs.com/package/@anthropic-ai/claude-code",
+      },
+    },
+    "codex-cli": {
+      id: "codex-cli",
+      title: "Codex 命令行",
+      note: "配置 ~/.codex/config.toml + OPENAI_API_KEY",
+      urls: {
+        docs: "/download#tools-codex-cli",
+        npm: "https://www.npmjs.com/package/@openai/codex",
+      },
+    },
+    "kimi-code": {
+      id: "kimi-code",
+      title: "Kimi Code 命令行",
+      note: "连接写入 KIMI_MODEL_* → madeapi.com/v1",
+      urls: {
+        docs: "/download#tools-kimi-code",
+        // Placeholder until Release asset published
+        mac: `${MADECLAW_RELEASE_BASE}/KimiCode-macOS.dmg`,
+      },
+    },
+  },
 };

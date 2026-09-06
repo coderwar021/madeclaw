@@ -4,13 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>下载 · MadeClaw</title>
-    <meta name="description" content="下载 MadeClaw macOS / Windows 安装包，并查看下载后怎么用。" />
+    <meta name="description" content="下载 MadeClaw macOS / Windows 安装包，查看安装与配置指引。" />
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="page">
     <div class="scroll-progress" aria-hidden="true"><div class="bar"></div></div>
     <header class="top">
-      <a class="brand" href="/">MadeClaw</a>
+      <a class="brand" href="/">
+        <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
+        <span>MadeClaw</span>
+      </a>
       <nav class="nav">
         <a href="/features">功能</a>
         <a href="/models">模型</a>
@@ -26,8 +30,8 @@
           <p class="eyebrow">Download</p>
           <h1 class="page-title">下载 MadeClaw</h1>
           <p class="band-lead">
-            macOS 优先（MadeClaw.app）。安装包托管在 GitHub Releases（体积较大，不进站点镜像）。
-            校验和见本站 <a href="/downloads/SHA256SUMS.txt">SHA256SUMS.txt</a>。
+            推荐 macOS（MadeClaw.app）。安装包托管于 GitHub Releases。校验和见
+            <a href="/downloads/SHA256SUMS.txt">SHA256SUMS.txt</a>。
           </p>
           <div id="dl-grid" class="dl-grid">
             <p class="muted">正在加载下载链接…</p>
@@ -38,44 +42,45 @@
       <section id="howto" class="band">
         <div class="band-inner scroll-reveal">
           <p class="eyebrow">Getting started</p>
-          <h2>下载后怎么用</h2>
-          <ol class="how-steps stagger howto-steps">
+          <h2>安装与配置</h2>
+          <ol class="how-steps howto-steps">
             <li>
-              <strong>安装 / 打开</strong> — macOS：打开 DMG，将 MadeClaw.app 拖入「应用程序」后启动。
+              <strong>安装</strong> — macOS：打开 DMG，将 MadeClaw.app 拖入「应用程序」后启动。
               Windows：运行对应 Setup.exe。
             </li>
             <li>
-              <strong>Gateway / Control UI</strong> — App 会拉起本机 Gateway；在 App 或 Control UI
-              完成引导。状态与端口以 App / 本机状态页为准（MadeClaw 配置档案）。
+              <strong>本机服务</strong> — App 会拉起本机 Gateway；在 App 或 Control UI
+              完成引导。端口与状态以客户端为准。
             </li>
             <li>
               <strong>注册账号</strong> — 打开
-              <a href="/register">madeclaw.up.railway.app 注册</a>，登录后在
-              <a href="/account">账号页</a> 复制稳定 <code>userId</code>，写入 App 插件 /
-              MadeClaw 配置（与充值、扣费同一 ID）。
+              <a href="/register">官网注册</a>，登录后在
+              <a href="/account">账号页</a> 复制稳定 <code>userId</code>，写入 App 配置（与充值、扣费同一
+              ID）。
             </li>
             <li>
               <strong>模型与密钥</strong> — 在 App 内选择模型（见
-              <a href="/models">模型列表</a>）。可填 MadeAPI Key；或充值后走本站独立余额。
-              自备非 MadeAPI 接口时可跳过余额扣费。
+              <a href="/models">模型列表</a>）。可填 MadeAPI Key，或充值后使用本站余额。
             </li>
             <li>
-              <strong>充值对齐用量</strong> — 余额不足时从 App「充值」或本站
-              <a href="/recharge">/recharge</a> 支付；Webhook 入账后，App
-              <code>madeclaw_balance</code> 与本站账本一致。用量见
-              <a href="/usage">/usage</a>。
+              <strong>充值与用量</strong> — 余额不足时前往
+              <a href="/recharge">充值</a>；用量见 <a href="/usage">用量</a>。
             </li>
           </ol>
           <div class="cta-row" style="margin-top: 1.5rem">
             <a class="btn btn-primary" href="/register">注册账号</a>
-            <a class="btn btn-ghost" href="/recharge">去充值</a>
+            <a class="btn btn-ghost" href="/recharge">充值</a>
             <a class="btn btn-ghost" href="/login">登录</a>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="foot">MadeClaw · v2026.8.1 · GitHub Releases</footer>
+    <footer class="foot">
+      <span class="foot-brand">MadeClaw</span>
+      <span class="foot-sep">·</span>
+      v2026.8.1 · GitHub Releases
+    </footer>
     <script src="/site-auth.js" defer></script>
     <script src="/motion.js" defer></script>
     <script>

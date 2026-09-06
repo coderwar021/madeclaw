@@ -4,12 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>账号 · MadeClaw</title>
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="page">
     <header class="top">
-      <a class="brand" href="/">MadeClaw</a>
+      <a class="brand" href="/">
+        <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
+        <span>MadeClaw</span>
+      </a>
       <nav class="nav">
+        <a href="/features">功能</a>
         <a href="/download">下载</a>
         <a href="/recharge">充值</a>
         <a href="/usage">用量</a>
@@ -23,10 +28,14 @@
       <div class="cta-row" style="margin-top: 1.25rem" id="actions" hidden>
         <a class="btn btn-primary" href="/recharge">充值</a>
         <a class="btn btn-ghost" href="/usage">查看用量</a>
-        <a class="btn btn-ghost" href="/download">下载 App</a>
+        <a class="btn btn-ghost" href="/download">下载客户端</a>
       </div>
     </main>
-    <footer class="foot">将下方 userId 写入 MadeClaw App 配置</footer>
+    <footer class="foot">
+      <span class="foot-brand">MadeClaw</span>
+      <span class="foot-sep">·</span>
+      将 userId 写入 App 配置
+    </footer>
     <script src="/site-auth.js"></script>
     <script>
       const alertEl = document.getElementById("alert");
@@ -53,7 +62,7 @@
           await navigator.clipboard.writeText(u.userId);
           alertEl.hidden = false;
           alertEl.className = "alert";
-          alertEl.style.background = "rgba(46,196,168,0.15)";
+          alertEl.style.background = "rgba(61,143,122,0.15)";
           alertEl.style.color = "var(--accent-bright)";
           alertEl.textContent = "已复制 userId";
         });

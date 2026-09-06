@@ -4,30 +4,39 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>登录 · MadeClaw</title>
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="page">
     <header class="top">
-      <a class="brand" href="/">MadeClaw</a>
+      <a class="brand" href="/">
+        <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
+        <span>MadeClaw</span>
+      </a>
       <nav class="nav">
+        <a href="/features">功能</a>
         <a href="/download">下载</a>
         <a href="/register">注册</a>
       </nav>
     </header>
     <main class="panel">
       <h1>登录</h1>
-      <p>使用用户名或邮箱登录。登录后可查看余额、充值与用量。</p>
+      <p>使用用户名或邮箱登录，管理余额、充值与用量。</p>
       <div id="alert" class="alert alert-err" hidden></div>
       <form id="form">
         <label for="login">用户名或邮箱</label>
         <input id="login" name="login" required autocomplete="username" />
         <label for="password">密码</label>
         <input id="password" name="password" type="password" required minlength="8" autocomplete="current-password" />
-        <button class="btn btn-primary" type="submit" style="width: 100%">登录</button>
+        <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 1.1rem">登录</button>
       </form>
       <p class="how-note">没有账号？<a href="/register">注册</a></p>
     </main>
-    <footer class="foot">会话 Cookie · 密码 scrypt 哈希</footer>
+    <footer class="foot">
+      <span class="foot-brand">MadeClaw</span>
+      <span class="foot-sep">·</span>
+      安全会话
+    </footer>
     <script src="/site-auth.js"></script>
     <script>
       const params = new URLSearchParams(location.search);

@@ -3,13 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MadeClaw · Token 统计</title>
+    <title>用量 · MadeClaw</title>
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="page">
     <header class="top">
-      <a class="brand" href="/">MadeClaw</a>
+      <a class="brand" href="/">
+        <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
+        <span>MadeClaw</span>
+      </a>
       <nav class="nav">
+        <a href="/features">功能</a>
         <a href="/download">下载</a>
         <a href="/recharge">充值</a>
         <a href="/usage">用量</a>
@@ -17,21 +22,21 @@
       </nav>
     </header>
     <main class="panel">
-      <h1>Token 统计</h1>
-      <p class="lead">已登录时显示你的用量汇总；也可填 serviceToken 查询任意 userId。</p>
-      <div id="session-out" class="kv-wrap" hidden></div>
-      <label>
-        userId
-        <input id="userId" type="text" autocomplete="username" />
-      </label>
-      <label>
-        serviceToken（可选，插件 Bearer）
-        <input id="token" type="password" placeholder="Bearer token" autocomplete="off" />
-      </label>
-      <button class="btn btn-primary" id="go" type="button">查询</button>
-      <pre id="out" class="err" style="margin-top:1.25rem;white-space:pre-wrap"></pre>
+      <h1>Token 用量</h1>
+      <p>已登录时显示你的用量汇总；也可使用 serviceToken 查询指定 userId。</p>
+      <div id="session-out" class="how-note" hidden></div>
+      <label for="userId">userId</label>
+      <input id="userId" type="text" autocomplete="username" />
+      <label for="token">serviceToken（可选）</label>
+      <input id="token" type="password" placeholder="Bearer token" autocomplete="off" />
+      <button class="btn btn-primary" id="go" type="button" style="width: 100%; margin-top: 1.1rem">查询</button>
+      <pre id="out" class="err" style="margin-top: 1.25rem; white-space: pre-wrap"></pre>
     </main>
-    <footer class="foot">GET /v1/usage · 登录用户见账号页</footer>
+    <footer class="foot">
+      <span class="foot-brand">MadeClaw</span>
+      <span class="foot-sep">·</span>
+      用量统计
+    </footer>
     <script src="/site-auth.js"></script>
     <script>
       const out = document.getElementById("out");
@@ -40,7 +45,7 @@
           document.getElementById("userId").value = me.user.userId;
           const box = document.getElementById("session-out");
           box.hidden = false;
-          box.innerHTML = `<p>已登录 · 余额 ${MadeClawAuth.formatUsd(me.balanceCents)} · 总 token ${me.usage?.totalTokens ?? 0}</p>`;
+          box.textContent = `已登录 · 余额 ${MadeClawAuth.formatUsd(me.balanceCents)} · 总 token ${me.usage?.totalTokens ?? 0}`;
         }
       });
       document.getElementById("go").addEventListener("click", async () => {

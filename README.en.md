@@ -63,6 +63,8 @@ See [`.env.example`](.env.example). Required on Railway:
 | `WAFFO_WEBHOOK_SECRET` | Required for webhook credit path (request-time fail-closed in production); not required to boot |
 | `BILLING_ALLOW_SIMULATE` | Must be `0` or unset in prod |
 
+**`WAFFO_PRIVATE_KEY`:** paste the full PEM in Railway Variables (multiline **or** single-line with `\n` escapes). Accepts `BEGIN PRIVATE KEY` (PKCS#8) or `BEGIN RSA PRIVATE KEY` (PKCS#1). The server unescapes `\n`, strips wrapping quotes, and uses `crypto.createPrivateKey`. Malformed keys return a friendly Chinese error to users; OpenSSL decoder details stay in Railway logs only. `error:1E08010C:DECODER routines::unsupported` almost always means a bad PEM paste.
+
 **Do not** commit PEM files, tokens, or MadeAPI keys.
 
 ### SQLite / persistence

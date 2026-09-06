@@ -38,6 +38,10 @@ import {
   MADECLAW_RELEASE_TAG,
 } from "./defaults.js";
 import { MADECLAW_PUBLIC_MODELS } from "./models-catalog.js";
+import {
+  WAFFO_KEY_USER_MESSAGE,
+  resolveWaffoPrivateKey,
+} from "./waffo-private-key.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
@@ -86,29 +90,11 @@ const PAY_SUCCESS_URL = process.env.PAY_SUCCESS_URL || `${PUBLIC_BASE}/pay/succe
 /** Lazy: Waffo is optional at boot; only checkout/pay requires merchant + key. */
 let cachedPrivateKey = null;
 
-function resolvePrivateKey() {
-  const inline = process.env.WAFFO_PRIVATE_KEY || "";
-  if (inline.trim()) {
-    return inline.replace(/\\n/g, "\n");
-  }
-  const keyPath = path.resolve(
-    appRoot,
-    process.env.WAFFO_PRIVATE_KEY_PATH || "./secrets/waffo-private.pem",
-  );
-  if (!fs.existsSync(keyPath)) {
-    const err = new Error(
-      `WAFFO private key missing: set WAFFO_PRIVATE_KEY or WAFFO_PRIVATE_KEY_PATH (${keyPath})`,
-    );
-    err.code = "waffo_not_configured";
-    err.status = 503;
-    throw err;
-  }
-  return fs.readFileSync(keyPath, "utf8");
-}
-
 function getPrivateKey() {
   if (cachedPrivateKey) return cachedPrivateKey;
-  cachedPrivateKey = resolvePrivateKey();
+  // Normalize PEM (\\n → newlines, strip quotes) then crypto.createPrivateKey.
+  // Malformed keys throw waffo_key_invalid — never cache failures.
+  cachedPrivateKey = resolveWaffoPrivateKey({ appRoot });
   return cachedPrivateKey;
 }
 
@@ -132,6 +118,45 @@ function assertWaffoConfigured() {
     throw err;
   }
   getPrivateKey();
+}
+
+/** Map pay/checkout failures to safe user + log-only detail. */
+function payFailureView(e) {
+  if (e.code === "waffo_not_configured") {
+    return {
+      status: e.status || 503,
+      title: "支付未配置",
+      userMessage: "支付服务尚未配置完成，请稍后重试或联系管理员。",
+      logDetail: String(e.message || e),
+    };
+  }
+  if (e.code === "waffo_key_invalid") {
+    console.error("[madeclaw-online] WAFFO_PRIVATE_KEY invalid:", e.message);
+    return {
+      status: 503,
+      title: "支付暂不可用",
+      userMessage: WAFFO_KEY_USER_MESSAGE,
+      logDetail: String(e.message || e),
+    };
+  }
+  const raw =
+    typeof e.body === "object" ? JSON.stringify(e.body) : String(e.message || e);
+  // Never leak OpenSSL decoder gibberish to browsers
+  if (/DECODER routines|unsupported|ERR_OSSL|asn1/i.test(raw)) {
+    console.error("[madeclaw-online] pay crypto/decode error:", raw);
+    return {
+      status: 503,
+      title: "支付暂不可用",
+      userMessage: WAFFO_KEY_USER_MESSAGE,
+      logDetail: raw,
+    };
+  }
+  return {
+    status: e.status || 500,
+    title: "支付创建失败",
+    userMessage: "请返回 MadeClaw 或稍后重试。",
+    logDetail: raw,
+  };
 }
 
 // Boot does not require WAFFO_* or webhook secret. Auth uses env or OOB default token.
@@ -887,6 +912,71 @@ app.get("/v1/downloads", (_req, res) => {
       },
     ],
     checksumsUrl: MADECLAW_DOWNLOADS.sha256Sums,
+    tools: Object.values(MADECLAW_DOWNLOADS.tools),
+  });
+});
+
+/** Public connect recipes (no secrets). App applies config via Gateway plugin. */
+app.get("/v1/uamgo/connect", (req, res) => {
+  const appId = String(req.query.app || "").trim();
+  const tools = MADECLAW_DOWNLOADS.tools;
+  if (appId && !tools[appId]) {
+    return res.status(404).json({ error: "unknown_app", apps: Object.keys(tools) });
+  }
+  const MADEAPI_BASE = "https://madeapi.com";
+  const MADEAPI_V1 = "https://madeapi.com/v1";
+  const recipes = {
+    "codex-client": {
+      app: "codex-client",
+      title: "Codex 客户端",
+      baseUrl: MADEAPI_V1,
+      configToml: `model_provider = "madeapi"\nmodel = "gpt-5.6-sol"\nmodel_reasoning_effort = "high"\n[model_providers.madeapi]\nname = "Madeapi"\nbase_url = "${MADEAPI_V1}"\nenv_key = "OPENAI_API_KEY"\nwire_api = "responses"\n`,
+      env: { OPENAI_API_KEY: "<your-madeapi-key>" },
+      download: tools["codex-client"],
+    },
+    "codex-cli": {
+      app: "codex-cli",
+      title: "Codex 命令行",
+      baseUrl: MADEAPI_V1,
+      configToml: `model_provider = "madeapi"\nmodel = "gpt-5.6-sol"\nmodel_reasoning_effort = "high"\n[model_providers.madeapi]\nname = "madeapi"\nbase_url = "${MADEAPI_V1}"\nenv_key = "OPENAI_API_KEY"\nwire_api = "responses"\n`,
+      env: { OPENAI_API_KEY: "<your-madeapi-key>" },
+      download: tools["codex-cli"],
+    },
+    "claude-code": {
+      app: "claude-code",
+      title: "Claude Code 命令行",
+      baseUrl: MADEAPI_BASE,
+      env: {
+        ANTHROPIC_BASE_URL: MADEAPI_BASE,
+        ANTHROPIC_AUTH_TOKEN: "<your-madeapi-key>",
+        ANTHROPIC_MODEL: "claude-opus-4-8",
+        ANTHROPIC_DEFAULT_FABLE_MODEL: "claude-fable-5-1",
+        ANTHROPIC_DEFAULT_OPUS_MODEL: "claude-opus-4-8",
+        ANTHROPIC_DEFAULT_SONNET_MODEL: "claude-sonnet-5",
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: "claude-haiku-4-5",
+        CLAUDE_CODE_SUBAGENT_MODEL: "claude-sonnet-5",
+        CLAUDE_CODE_EFFORT_LEVEL: "xhigh",
+      },
+      download: tools["claude-code"],
+    },
+    "kimi-code": {
+      app: "kimi-code",
+      title: "Kimi Code 命令行",
+      baseUrl: MADEAPI_V1,
+      env: {
+        KIMI_MODEL_NAME: "kimi-k3",
+        KIMI_MODEL_PROVIDER_TYPE: "openai",
+        KIMI_MODEL_API_KEY: "<your-madeapi-key>",
+        KIMI_MODEL_BASE_URL: MADEAPI_V1,
+        KIMI_MODEL_MAX_CONTEXT_SIZE: "1048576",
+      },
+      download: tools["kimi-code"],
+    },
+  };
+  if (appId) return res.json(recipes[appId]);
+  res.json({
+    note: "在 MadeClaw App「uamgo all」点连接可自动写入；本接口仅返回配方（无真实密钥）。",
+    apps: Object.values(recipes),
   });
 });
 
@@ -1133,9 +1223,24 @@ app.post("/v1/checkout", requireServiceAuth, async (req, res) => {
         detail: String(e.message),
       });
     }
+    if (e.code === "waffo_key_invalid") {
+      console.error("[madeclaw-online] checkout key invalid:", e.message);
+      return res.status(503).json({
+        error: "waffo_key_invalid",
+        detail: WAFFO_KEY_USER_MESSAGE,
+      });
+    }
+    const detail = e.body || String(e.message);
+    if (typeof detail === "string" && /DECODER routines|unsupported|ERR_OSSL/i.test(detail)) {
+      console.error("[madeclaw-online] checkout crypto error:", detail);
+      return res.status(503).json({
+        error: "waffo_key_invalid",
+        detail: WAFFO_KEY_USER_MESSAGE,
+      });
+    }
     res
       .status(e.status || 500)
-      .json({ error: "waffo_checkout_failed", detail: e.body || String(e.message) });
+      .json({ error: "waffo_checkout_failed", detail });
   }
 });
 
@@ -1174,18 +1279,13 @@ app.get("/pay", async (req, res) => {
     }
     res.redirect(302, checkoutUrl);
   } catch (e) {
-    const detail =
-      e.code === "waffo_not_configured"
-        ? String(e.message)
-        : typeof e.body === "object"
-          ? JSON.stringify(e.body)
-          : String(e.message || e);
-    const title = e.code === "waffo_not_configured" ? "支付未配置" : "支付创建失败";
+    const view = payFailureView(e);
+    const safeMsg = view.userMessage.replace(/[<>&]/g, "");
     res
-      .status(e.status || 500)
+      .status(view.status)
       .type("html")
       .send(
-        `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${title}</title><link rel="stylesheet" href="/styles.css"></head><body class="page"><main class="panel"><h1>${title}</h1><p>请返回 MadeClaw 或稍后重试。若为部署问题，请在 Railway 配置 WAFFO_MERCHANT_ID 与 WAFFO_PRIVATE_KEY。</p><pre class="err">${detail.replace(/[<>&]/g, "")}</pre><p><a href="/recharge?userId=${encodeURIComponent(userId)}">返回充值页</a></p></main></body></html>`,
+        `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${view.title}</title><link rel="icon" href="/favicon.jpg" type="image/jpeg"><link rel="stylesheet" href="/styles.css"></head><body class="page"><main class="panel"><h1>${view.title}</h1><p>${safeMsg}</p><p class="muted">若为部署问题，请在 Railway 配置完整的 WAFFO_PRIVATE_KEY（PEM，可用 \\n 转义换行）。</p><p><a href="/recharge?userId=${encodeURIComponent(userId)}">返回充值页</a></p></main></body></html>`,
       );
   }
 });

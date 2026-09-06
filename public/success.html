@@ -4,23 +4,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>支付成功 · MadeClaw</title>
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="page">
     <header class="top">
-      <a class="brand" href="/">MadeClaw</a>
+      <a class="brand" href="/">
+        <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
+        <span>MadeClaw</span>
+      </a>
     </header>
     <main class="panel">
-      <div class="ok-mark">✓</div>
+      <p class="ok-mark" aria-hidden="true">✓</p>
       <h1>支付成功</h1>
       <p>
-        若支付已完成，余额将记入 MadeClaw 独立账户（不是 MadeAPI 钱包）。请返回 MadeClaw App
-        继续使用；可用工具 <code>madeclaw_balance</code> 核对余额。
+        若支付已完成，余额将记入 MadeClaw 独立账户。请返回 MadeClaw App 继续使用；可用
+        <code>madeclaw_balance</code> 核对余额。
       </p>
-      <p style="margin: 0">
-        <a class="btn btn-primary" href="/">回到首页</a>
+      <p style="margin: 1rem 0 0">
+        <a class="btn btn-primary" href="/account">查看账号</a>
+        <a class="btn btn-ghost" href="/" style="margin-left: 0.5rem">回到首页</a>
       </p>
     </main>
-    <footer class="foot">Webhook 入账可能有数秒延迟</footer>
+    <footer class="foot">
+      <span class="foot-brand">MadeClaw</span>
+      <span class="foot-sep">·</span>
+      入账可能有数秒延迟
+    </footer>
   </body>
 </html>

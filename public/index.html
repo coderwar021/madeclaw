@@ -3,30 +3,37 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MadeClaw</title>
+    <title>MadeClaw — 桌面 AI 助手</title>
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:image" content="/brand/brand-icon.jpg" />
+    <meta name="theme-color" content="#0d1c24" />
     <meta
       name="description"
-      content="MadeClaw — 桌面 AI 助手。下载 App，官网登录充值，余额独立。"
+      content="MadeClaw：专业桌面 AI 助手。下载客户端，官网登录充值，余额独立结算。"
     />
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@600;700;800&family=Noto+Sans+SC:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0;500;0;600;1;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="page home">
     <div class="scroll-progress" aria-hidden="true"><div class="bar"></div></div>
-    <canvas class="stars" id="stars" aria-hidden="true"></canvas>
     <div class="ambient" aria-hidden="true">
-      <div class="orb orb-a gradient-shift"></div>
-      <div class="orb orb-b gradient-shift"></div>
-      <div class="orb orb-c"></div>
+      <div class="wash wash-a"></div>
+      <div class="wash wash-b"></div>
     </div>
 
     <header class="top top-home">
-      <a class="brand" href="/">MadeClaw</a>
+      <a class="brand" href="/">
+        <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
+        <span>MadeClaw</span>
+      </a>
       <nav class="nav">
         <a href="/features">功能</a>
         <a href="/models">模型</a>
@@ -38,68 +45,68 @@
 
     <section class="hero hero-stage" aria-label="MadeClaw">
       <div class="hero-copy">
-        <p class="eyebrow enter enter-1">独立账本 · 桌面优先</p>
-        <h1 class="brand-hero mask-reveal text-metallic">MadeClaw</h1>
-        <p class="headline blur-in">下载 App，站上登录充值。</p>
+        <p class="eyebrow enter enter-1">Desktop AI · Independent billing</p>
+        <h1 class="brand-hero mask-reveal">MadeClaw</h1>
+        <p class="headline blur-in">专业桌面助手，独立账户体系。</p>
         <p class="lead enter enter-2">
-          对话与执行留在桌面；额度记入 MadeClaw 独立余额，与 MadeAPI 钱包分开。
+          在本机完成对话与执行；账号、充值与用量在官网统一管理。MadeClaw
+          余额与第三方钱包严格隔离。
         </p>
         <div class="cta-row enter enter-3">
-          <a class="btn btn-primary mag-btn shadow-grow-soft" href="/download">立即下载</a>
-          <a class="btn btn-ghost" href="/features">了解功能</a>
+          <a class="btn btn-primary" href="/download">下载客户端</a>
+          <a class="btn btn-ghost" href="/features">了解产品</a>
         </div>
       </div>
 
-      <div class="hero-visual parallax" id="hero-parallax" aria-hidden="true">
-        <div class="layer visual-glow" data-depth="1"></div>
-        <div class="layer visual-ring scale-pulse-soft" data-depth="2"></div>
-        <svg class="layer visual-mark svg-draw" data-depth="3.2" viewBox="0 0 240 240" fill="none">
-          <circle class="ring-path" cx="120" cy="120" r="88" />
-          <path
-            class="claw-path"
-            d="M72 128 C88 72 118 58 148 70 C168 80 178 102 172 126 C164 152 140 168 116 164 C96 160 80 146 72 128 Z
-               M128 86 C142 92 154 110 150 132
-               M98 96 C108 118 118 138 128 154
-               M156 108 C148 128 136 146 122 160"
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-frame scroll-reveal">
+          <img
+            class="hero-brand-img"
+            src="/brand/brand-icon.jpg"
+            width="512"
+            height="512"
+            alt="MadeClaw"
           />
-        </svg>
-        <div class="layer visual-core" data-depth="4"></div>
+        </div>
       </div>
     </section>
 
     <section id="features-preview" class="band">
       <div class="band-inner scroll-reveal">
         <p class="eyebrow">功能</p>
-        <h2>App + 官网，各司其职</h2>
+        <h2>客户端执行，官网结算</h2>
         <p class="band-lead">
-          桌面干活，网站管账号与充值。用量、消息下传、开箱连本站，一条链路跑通。
+          产品路径清晰：下载 App → 注册账号 → 配置模型 → 按需充值。每一步都有可见结果。
         </p>
-        <ul class="feature-list stagger">
-          <li><strong>双端</strong> — MadeClaw App 与 Control UI，本机 Gateway 执行。</li>
-          <li><strong>独立余额</strong> — 充值记入本站账本，不进 MadeAPI 钱包。</li>
-          <li><strong>模型自选</strong> — App 内选 MadeAPI 模型；也可自备 API 跳过余额。</li>
-          <li><strong>用量可见</strong> — Token 统计与消息下传 inbox，随时核对。</li>
+        <ul class="feature-list">
+          <li><strong>桌面优先</strong> — MadeClaw App 与本机 Gateway，会话留在本地。</li>
+          <li><strong>独立余额</strong> — 充值只写入 MadeClaw 账本，不与 MadeAPI 钱包混用。</li>
+          <li><strong>模型自选</strong> — 在 App 内选择模型；亦可自备 API 跳过余额扣费。</li>
+          <li><strong>用量可核</strong> — Token 统计与消息下传，官网随时核对。</li>
         </ul>
-        <p class="how-note"><a href="/features">完整功能介绍 →</a></p>
+        <p class="how-note"><a href="/features">完整功能说明 →</a></p>
       </div>
     </section>
 
     <section id="how" class="how">
       <div class="how-inner scroll-reveal">
-        <h2>下载后怎么用</h2>
-        <ol class="how-steps stagger">
-          <li>从 <a href="/download">下载页</a> 获取 macOS DMG（或 Windows 安装包），打开 MadeClaw.app。</li>
-          <li>在本站 <a href="/register">注册 / 登录</a>，记下账号页显示的 <code>userId</code>。</li>
-          <li>App 内填 MadeAPI Key，或充值后用本站余额；模型在 App / Control UI 选择。</li>
-          <li>余额不足时打开 <a href="/recharge">充值</a>；支付成功后与 App 扣费同一 <code>userId</code>。</li>
+        <h2>开始使用</h2>
+        <ol class="how-steps">
+          <li>从 <a href="/download">下载页</a> 获取 macOS / Windows 安装包并启动 MadeClaw。</li>
+          <li>在本站 <a href="/register">注册</a>，于账号页复制稳定 <code>userId</code>。</li>
+          <li>在 App 配置模型与密钥（或使用本站余额）；不足时前往 <a href="/recharge">充值</a>。</li>
         </ol>
         <p class="how-note">
-          详见 <a href="/download#howto">下载后怎么用</a> · <a href="/models">模型列表</a>
+          <a href="/download#howto">安装指引</a> · <a href="/models">模型列表</a>
         </p>
       </div>
     </section>
 
-    <footer class="foot">MadeClaw Online · 独立余额 · creditsMadeApiWallet: false</footer>
+    <footer class="foot">
+      <span class="foot-brand">MadeClaw</span>
+      <span class="foot-sep">·</span>
+      桌面 AI 助手 · 独立结算
+    </footer>
     <script src="/site-auth.js" defer></script>
     <script src="/motion.js" defer></script>
     <script>
