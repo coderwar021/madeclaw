@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MadeClaw balance gate for OpenClaw Gateway",
+  "description": "MadeClaw balance gate for MadeClaw Gateway",
   "openclaw": {
     "extensions": ["./index.js"]
   }
