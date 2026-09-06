@@ -3,10 +3,11 @@
  * Credits ONLY this MadeClaw ledger (creditsMadeApiWallet: false). Never MadeAPI wallets.
  *
  * Production hardening vs local billing prototype:
- * - Bearer auth fail-closed when BILLING_SERVICE_TOKEN empty in production
- * - Webhook requires WAFFO_WEBHOOK_SECRET in production
+ * - Bearer: BILLING_SERVICE_TOKEN or MADECLAW_DEFAULT_SERVICE_TOKEN (OOB)
+ * - Webhook auth fail-closed at request time in production if secret unset
  * - Waffo merchant/key optional at boot; /pay and /v1/checkout fail closed if unset
  * - simulatePaid disabled unless BILLING_ALLOW_SIMULATE=1
+ * - Token usage (/v1/usage) + message downlink (/v1/messages/*)
  * - Optional hold/capture/release for pre-debit (plugin should migrate; see README)
  */
 import crypto from "node:crypto";

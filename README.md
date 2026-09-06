@@ -14,10 +14,16 @@ Ledger is **MadeClaw-only** (`creditsMadeApiWallet: false`). Shares Waffo mercha
 | GET | `/recharge` | public | Recharge form (Chinese) |
 | GET | `/pay?userId=&amountCents=` | public | Create Waffo checkout → 302 |
 | GET | `/pay/success` | public | Post-pay page |
+| GET | `/usage` | public | Token stats page |
 | GET | `/health` | public | Railway health |
-| GET | `/v1/balance?userId=` | Bearer | Balance |
+| GET | `/v1/balance?userId=` | Bearer | Balance (+ usage, inboxPending) |
 | POST | `/v1/credit` | Bearer | Ops/test credit |
 | POST | `/v1/debit` | Bearer | Run fee debit (plugin today) |
+| POST | `/v1/usage` | Bearer | Report token usage |
+| GET | `/v1/usage?userId=` | Bearer | Usage totals + recent events |
+| POST | `/v1/messages` | Bearer | Enqueue downlink message |
+| GET | `/v1/messages/poll?userId=` | Bearer | Poll pending messages |
+| POST | `/v1/messages/ack` | Bearer | Ack messages |
 | POST | `/v1/hold` | Bearer | Pre-debit reserve |
 | POST | `/v1/capture` | Bearer | Finalize hold |
 | POST | `/v1/release` | Bearer | Refund hold |
@@ -25,6 +31,7 @@ Ledger is **MadeClaw-only** (`creditsMadeApiWallet: false`). Shares Waffo mercha
 | POST | `/v1/webhooks/waffo` | webhook secret | Paid → credit ledger |
 
 Bearer: `Authorization: Bearer ${BILLING_SERVICE_TOKEN}`  
+OOB when unset: `MADECLAW_DEFAULT_SERVICE_TOKEN` (`madeclaw-oob-service-token-v1`) — same as plugin.  
 Webhook: `Authorization: Bearer ${WAFFO_WEBHOOK_SECRET}` or header `X-Webhook-Secret`
 
 ## Production hardening (vs local `billing/` prototype)

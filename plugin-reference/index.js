@@ -408,6 +408,8 @@ function register(api) {
 
   /** runIds successfully pre-debited in before_agent_run (refund only these on failure). */
   const preDebitedRuns = new Set();
+  /** runIds that already got llm_output usage posts (skip transcript double-count). */
+  const usageReportedRuns = new Set();
 
   // Debit at gate (not post-run fail-open): same userId ledger as webhook credit.
   // Failed runs are refunded via /v1/credit so operators are not charged for errors.
@@ -475,6 +477,7 @@ function register(api) {
         totalTokens: usage.total,
         ref: `usage:llm:${callKey}`,
       });
+      if (runId) usageReportedRuns.add(runId);
     } catch (e) {
       api.logger?.warn?.(
         `madeclaw-billing usage report failed: ${e instanceof Error ? e.message : String(e)}`,
@@ -487,27 +490,30 @@ function register(api) {
     const runId = event?.runId || ctx?.runId;
     if (!runId) return;
 
-    // Best-effort usage from transcript if llm_output was not wired.
-    const fromMsgs = extractUsageFromMessages(event?.messages);
-    if (fromMsgs && fromMsgs.total > 0) {
-      try {
-        await postUsage(cfg, {
-          runId,
-          provider: ctx?.modelProviderId,
-          model: ctx?.modelId,
-          inputTokens: fromMsgs.input,
-          outputTokens: fromMsgs.output,
-          cacheReadTokens: fromMsgs.cacheRead,
-          cacheWriteTokens: fromMsgs.cacheWrite,
-          totalTokens: fromMsgs.total,
-          ref: `usage:run:${runId}`,
-        });
-      } catch (e) {
-        api.logger?.warn?.(
-          `madeclaw-billing run usage report failed: ${e instanceof Error ? e.message : String(e)}`,
-        );
+    // Best-effort usage from transcript if llm_output was not wired for this run.
+    if (!usageReportedRuns.has(runId)) {
+      const fromMsgs = extractUsageFromMessages(event?.messages);
+      if (fromMsgs && fromMsgs.total > 0) {
+        try {
+          await postUsage(cfg, {
+            runId,
+            provider: ctx?.modelProviderId,
+            model: ctx?.modelId,
+            inputTokens: fromMsgs.input,
+            outputTokens: fromMsgs.output,
+            cacheReadTokens: fromMsgs.cacheRead,
+            cacheWriteTokens: fromMsgs.cacheWrite,
+            totalTokens: fromMsgs.total,
+            ref: `usage:run:${runId}`,
+          });
+        } catch (e) {
+          api.logger?.warn?.(
+            `madeclaw-billing run usage report failed: ${e instanceof Error ? e.message : String(e)}`,
+          );
+        }
       }
     }
+    usageReportedRuns.delete(runId);
 
     // Failed run: refund only if this process pre-debited the same runId.
     if (event?.success === false) {
