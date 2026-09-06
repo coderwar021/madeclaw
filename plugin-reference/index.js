@@ -12,6 +12,7 @@ import {
   MADECLAW_DEFAULT_SERVICE_TOKEN,
   MADECLAW_PUBLIC_ORIGIN,
 } from "./defaults.js";
+import { connectUamgoApp, publicConnectRecipe, UAMGO_APPS } from "./uamgo/connect.js";
 
 function asRecord(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
@@ -549,6 +550,64 @@ function register(api) {
       );
     }
   });
+
+  // Uamgo All: wallet + one-click tool linking (Codex / Claude Code / Kimi).
+  const respondOk = (respond, payload) => respond(true, payload);
+  const respondErr = (respond, message) =>
+    respond(false, { error: message, ok: false, message });
+
+  api.registerGatewayMethod(
+    "madeclaw.uamgo.balance",
+    async ({ respond }) => {
+      try {
+        const body = await fetchBalance(cfg);
+        respondOk(respond, {
+          balanceCents: Number(body.balanceCents || 0),
+          userId: cfg.userId,
+          payUrl: payUrl(cfg),
+          billingBaseUrl: cfg.billingBaseUrl,
+          apps: UAMGO_APPS,
+        });
+      } catch (e) {
+        respondErr(
+          respond,
+          `无法查询余额：${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    },
+    { scope: "operator.read" },
+  );
+
+  api.registerGatewayMethod(
+    "madeclaw.uamgo.connect",
+    async ({ params, respond }) => {
+      try {
+        const result = connectUamgoApp({
+          app: params?.app,
+          apiKey: typeof params?.apiKey === "string" ? params.apiKey : undefined,
+        });
+        // Always ack the RPC; product outcome is result.ok (never silent).
+        respondOk(respond, result);
+      } catch (e) {
+        respondOk(respond, {
+          ok: false,
+          message: e instanceof Error ? e.message : String(e),
+        });
+      }
+    },
+    { scope: "operator.write" },
+  );
+
+  api.registerGatewayMethod(
+    "madeclaw.uamgo.recipes",
+    async ({ respond }) => {
+      respondOk(respond, {
+        apps: UAMGO_APPS.map((id) => ({ id, ...publicConnectRecipe(id) })),
+        site: cfg.billingBaseUrl,
+      });
+    },
+    { scope: "operator.read" },
+  );
 }
 
 export default {
