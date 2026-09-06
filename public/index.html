@@ -4,11 +4,28 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>MadeClaw</title>
-    <meta name="description" content="MadeClaw — 桌面 AI 助手。App 内使用，网站充值，余额独立。" />
+    <meta
+      name="description"
+      content="MadeClaw — 桌面 AI 助手。App 内使用，网站充值，余额独立。"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@600;700;800&family=Noto+Sans+SC:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="page">
-    <header class="top">
+  <body class="page home">
+    <div class="scroll-progress" aria-hidden="true"><div class="bar"></div></div>
+    <canvas class="stars" id="stars" aria-hidden="true"></canvas>
+    <div class="ambient" aria-hidden="true">
+      <div class="orb orb-a gradient-shift"></div>
+      <div class="orb orb-b gradient-shift"></div>
+      <div class="orb orb-c"></div>
+    </div>
+
+    <header class="top top-home">
       <a class="brand" href="/">MadeClaw</a>
       <nav class="nav">
         <a href="/recharge">充值</a>
@@ -16,30 +33,57 @@
         <a href="/health">状态</a>
       </nav>
     </header>
-    <section class="hero">
-      <h1>MadeClaw</h1>
-      <p class="lead">
-        在桌面 App 里对话与执行；需要额度时打开本站充值。余额记入 MadeClaw 独立账本，与 MadeAPI 钱包分开。
-      </p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="/recharge">立即充值</a>
-        <a class="btn btn-ghost" href="#how">了解流程</a>
+
+    <section class="hero hero-stage" aria-label="MadeClaw">
+      <div class="hero-copy">
+        <p class="eyebrow enter enter-1">独立账本 · 桌面优先</p>
+        <h1 class="brand-hero mask-reveal text-metallic">MadeClaw</h1>
+        <p class="headline blur-in">App 里干活，站上充值。</p>
+        <p class="lead enter enter-2">
+          对话与执行留在桌面；额度记入 MadeClaw 独立余额，与 MadeAPI 钱包分开。
+        </p>
+        <div class="cta-row enter enter-3">
+          <a class="btn btn-primary mag-btn shadow-grow-soft" href="/recharge">立即充值</a>
+          <a class="btn btn-ghost" href="#how">了解流程</a>
+        </div>
+      </div>
+
+      <div class="hero-visual parallax" id="hero-parallax" aria-hidden="true">
+        <div class="layer visual-glow" data-depth="1"></div>
+        <div class="layer visual-ring scale-pulse-soft" data-depth="2"></div>
+        <svg class="layer visual-mark svg-draw" data-depth="3.2" viewBox="0 0 240 240" fill="none">
+          <circle class="ring-path" cx="120" cy="120" r="88" />
+          <path
+            class="claw-path"
+            d="M72 128 C88 72 118 58 148 70 C168 80 178 102 172 126 C164 152 140 168 116 164 C96 160 80 146 72 128 Z
+               M128 86 C142 92 154 110 150 132
+               M98 96 C108 118 118 138 128 154
+               M156 108 C148 128 136 146 122 160"
+          />
+        </svg>
+        <div class="layer visual-core" data-depth="4"></div>
       </div>
     </section>
-    <section id="how" class="panel" style="margin-top: 0; margin-bottom: 3rem">
-      <h1>如何充值</h1>
-      <p>
-        1. 在 MadeClaw App 使用「充值」或工具 <code>madeclaw_recharge</code>，会打开带
-        <code>userId</code> 的链接。<br />
-        2. 本站创建支付会话并跳转 Waffo 收银台。<br />
-        3. 支付成功后，Webhook 将金额记入你的 MadeClaw 余额。<br />
-        4. 返回 App 继续使用；余额与扣费使用同一套 API。
-      </p>
-      <p style="margin: 0">
-        也可手动打开
-        <a href="/recharge">充值页</a>，填入 App 显示的 userId。
-      </p>
+
+    <section id="how" class="how">
+      <div class="how-inner scroll-reveal">
+        <h2>如何充值</h2>
+        <ol class="how-steps stagger">
+          <li>
+            在 MadeClaw App 使用「充值」或工具 <code>madeclaw_recharge</code>，打开带
+            <code>userId</code> 的链接。
+          </li>
+          <li>本站创建支付会话并跳转 Waffo 收银台。</li>
+          <li>支付成功后，Webhook 将金额记入你的 MadeClaw 余额。</li>
+          <li>返回 App 继续使用；余额与扣费使用同一套 API。</li>
+        </ol>
+        <p class="how-note">
+          也可手动打开 <a href="/recharge">充值页</a>，填入 App 显示的 userId。
+        </p>
+      </div>
     </section>
+
     <footer class="foot">MadeClaw Online · 独立余额 · creditsMadeApiWallet: false</footer>
+    <script src="/motion.js" defer></script>
   </body>
 </html>
