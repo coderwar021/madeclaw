@@ -19,50 +19,58 @@ export const MADECLAW_RELEASE_TAG = `v${MADECLAW_APP_VERSION}`;
 export const MADECLAW_RELEASE_BASE =
   `https://github.com/coderwar021/madeclaw/releases/download/${MADECLAW_RELEASE_TAG}`;
 
+/** Mirrored third-party tool installers (one-click; not marketing-page anchors). */
+export const MADECLAW_TOOLS_RELEASE_TAG = "v2026.8.1-tools";
+export const MADECLAW_TOOLS_RELEASE_BASE =
+  `https://github.com/coderwar021/madeclaw/releases/download/${MADECLAW_TOOLS_RELEASE_TAG}`;
+
 export const MADECLAW_DOWNLOADS = {
   macosDmg: `${MADECLAW_RELEASE_BASE}/MadeClaw-macOS-${MADECLAW_APP_VERSION}.dmg`,
   windowsX64: `${MADECLAW_RELEASE_BASE}/MadeClaw-Windows-x64-Setup.exe`,
   windowsArm64: `${MADECLAW_RELEASE_BASE}/MadeClaw-Windows-arm64-Setup.exe`,
   sha256Sums: "/downloads/SHA256SUMS.txt",
-  /** Dev-tool installers / docs hosted on this site (not Teamo). */
+  toolsSha256Sums: `${MADECLAW_TOOLS_RELEASE_BASE}/TOOLS-SHA256SUMS.txt`,
+  toolsRedistribution: `${MADECLAW_TOOLS_RELEASE_BASE}/TOOLS-REDISTRIBUTION.txt`,
+  /** Dev-tool installers mirrored on MadeClaw GitHub Releases. */
   tools: {
     "codex-client": {
       id: "codex-client",
       title: "Codex 客户端",
-      note: "配置 ~/.codex/config.toml → madeapi（见 /v1/uamgo/connect）",
+      note: "官方 Codex macOS arm64 DMG（openai/codex rust-v0.153.4 镜像）",
+      file: "Codex-Client-macOS-arm64.dmg",
+      url: `${MADECLAW_TOOLS_RELEASE_BASE}/Codex-Client-macOS-arm64.dmg`,
       urls: {
-        docs: "/download#tools-codex-client",
-        // Official Codex installers when mirrored; placeholders until Release assets land.
-        mac: `${MADECLAW_RELEASE_BASE}/Codex-macOS.dmg`,
-        win: `${MADECLAW_RELEASE_BASE}/Codex-Windows-Setup.exe`,
+        primary: `${MADECLAW_TOOLS_RELEASE_BASE}/Codex-Client-macOS-arm64.dmg`,
       },
     },
     "claude-code": {
       id: "claude-code",
       title: "Claude Code 命令行",
-      note: "npm i -g @anthropic-ai/claude-code；连接写入 ANTHROPIC_* → madeapi.com",
+      note: "官方 @anthropic-ai/claude-code-darwin-arm64 2.1.263 原生包镜像",
+      file: "Claude-Code-CLI-darwin-arm64-2.1.263.tgz",
+      url: `${MADECLAW_TOOLS_RELEASE_BASE}/Claude-Code-CLI-darwin-arm64-2.1.263.tgz`,
       urls: {
-        docs: "/download#tools-claude-code",
-        npm: "https://www.npmjs.com/package/@anthropic-ai/claude-code",
+        primary: `${MADECLAW_TOOLS_RELEASE_BASE}/Claude-Code-CLI-darwin-arm64-2.1.263.tgz`,
       },
     },
     "codex-cli": {
       id: "codex-cli",
       title: "Codex 命令行",
-      note: "配置 ~/.codex/config.toml + OPENAI_API_KEY",
+      note: "官方 Codex CLI macOS arm64 归档（openai/codex rust-v0.153.4 镜像）",
+      file: "Codex-CLI-macOS-arm64.tar.gz",
+      url: `${MADECLAW_TOOLS_RELEASE_BASE}/Codex-CLI-macOS-arm64.tar.gz`,
       urls: {
-        docs: "/download#tools-codex-cli",
-        npm: "https://www.npmjs.com/package/@openai/codex",
+        primary: `${MADECLAW_TOOLS_RELEASE_BASE}/Codex-CLI-macOS-arm64.tar.gz`,
       },
     },
     "kimi-code": {
       id: "kimi-code",
       title: "Kimi Code 命令行",
-      note: "连接写入 KIMI_MODEL_* → madeapi.com/v1",
+      note: "官方 Kimi CLI macOS arm64（MoonshotAI/kimi-cli 1.50.0 镜像）",
+      file: "Kimi-Code-CLI-macOS-arm64.tar.gz",
+      url: `${MADECLAW_TOOLS_RELEASE_BASE}/Kimi-Code-CLI-macOS-arm64.tar.gz`,
       urls: {
-        docs: "/download#tools-kimi-code",
-        // Placeholder until Release asset published
-        mac: `${MADECLAW_RELEASE_BASE}/KimiCode-macOS.dmg`,
+        primary: `${MADECLAW_TOOLS_RELEASE_BASE}/Kimi-Code-CLI-macOS-arm64.tar.gz`,
       },
     },
   },

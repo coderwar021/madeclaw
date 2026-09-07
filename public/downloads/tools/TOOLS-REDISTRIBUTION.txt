@@ -1,0 +1,6 @@
+MadeClaw mirrors third-party developer tool installers for one-click download convenience.
+Upstream sources (unchanged binaries/packages):
+- Codex Client / Codex CLI: https://github.com/openai/codex/releases (rust-v0.153.4)
+- Claude Code CLI: https://www.npmjs.com/package/@anthropic-ai/claude-code (2.1.263)
+- Kimi Code CLI: https://github.com/MoonshotAI/kimi-cli/releases (1.50.0)
+Licenses and trademarks remain with their respective owners. Prefer updating from upstream when available.

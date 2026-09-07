@@ -1,0 +1,4 @@
+ff9f3c75e181a2e3b0e3038a4c2a88812e910b34cb89151c3fcd674ab36c6090  Codex-Client-macOS-arm64.dmg
+f1c0d2da0e49acdb26f87d9d1a6fd036d03c1d31d9ae8a5682c453c8f127f32e  Claude-Code-CLI-darwin-arm64-2.1.263.tgz
+8cf911ea676523bfb2121ec561848d2aba564890ad536db4d8a3353f2b9850b1  Codex-CLI-macOS-arm64.tar.gz
+5684f903cfc1ca1be4135a2634f7db108c787827c084b41df6a98eb01c9012df  Kimi-Code-CLI-macOS-arm64.tar.gz

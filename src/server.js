@@ -912,8 +912,20 @@ app.get("/v1/downloads", (_req, res) => {
       },
     ],
     checksumsUrl: MADECLAW_DOWNLOADS.sha256Sums,
+    toolsChecksumsUrl: MADECLAW_DOWNLOADS.toolsSha256Sums,
+    toolsRedistributionUrl: MADECLAW_DOWNLOADS.toolsRedistribution,
     tools: Object.values(MADECLAW_DOWNLOADS.tools),
   });
+});
+
+/** One-click tool download: 302 to MadeClaw-hosted Release asset (not a marketing hash page). */
+app.get("/downloads/tools/:toolId", (req, res) => {
+  const tool = MADECLAW_DOWNLOADS.tools[String(req.params.toolId || "").trim()];
+  if (!tool?.url) {
+    return res.status(404).type("text/plain").send("unknown tool");
+  }
+  res.setHeader("Cache-Control", "public, max-age=300");
+  res.redirect(302, tool.url);
 });
 
 /** Public connect recipes (no secrets). App applies config via Gateway plugin. */

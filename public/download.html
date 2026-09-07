@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>下载 · MadeClaw</title>
-    <meta name="description" content="下载 MadeClaw macOS / Windows 安装包，查看安装与配置指引。" />
+    <meta name="description" content="下载 MadeClaw macOS / Windows 安装包，以及 Codex / Claude Code / Kimi 工具镜像包。" />
     <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -35,6 +35,27 @@
           </p>
           <div id="dl-grid" class="dl-grid">
             <p class="muted">正在加载下载链接…</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="tools" class="band">
+        <div class="band-inner scroll-reveal">
+          <p class="eyebrow">Dev tools</p>
+          <h2>开发工具一键下载</h2>
+          <p class="band-lead">
+            Codex / Claude Code / Kimi 安装包由 MadeClaw 镜像托管（GitHub Releases），点击即下，不跳转说明页。
+            校验：
+            <a href="https://github.com/coderwar021/madeclaw/releases/download/v2026.8.1-tools/TOOLS-SHA256SUMS.txt"
+              >TOOLS-SHA256SUMS.txt</a
+            >
+            ·
+            <a href="https://github.com/coderwar021/madeclaw/releases/download/v2026.8.1-tools/TOOLS-REDISTRIBUTION.txt"
+              >来源说明</a
+            >。
+          </p>
+          <div id="tools-grid" class="dl-grid">
+            <p class="muted">正在加载工具包…</p>
           </div>
         </div>
       </section>
@@ -87,6 +108,7 @@
       document.addEventListener("DOMContentLoaded", async () => {
         window.MadeClawAuth?.paintNav();
         const grid = document.getElementById("dl-grid");
+        const toolsGrid = document.getElementById("tools-grid");
         try {
           const res = await fetch("/v1/downloads");
           const data = await res.json();
@@ -106,8 +128,20 @@
             note.innerHTML = `版本 <code>${data.version}</code> · <a href="${data.checksumsUrl}">校验和</a>`;
             grid.after(note);
           }
+          const tools = Array.isArray(data.tools) ? data.tools : [];
+          toolsGrid.innerHTML = tools
+            .map(
+              (t) => `
+            <a class="dl-card" href="${t.url}" download rel="noopener">
+              <span class="dl-label">${t.title}</span>
+              <span class="dl-file">${t.file || t.id}</span>
+              <span class="dl-cta">立即下载</span>
+            </a>`,
+            )
+            .join("");
         } catch (e) {
           grid.innerHTML = `<p class="alert alert-err">无法加载下载列表：${String(e)}</p>`;
+          toolsGrid.innerHTML = `<p class="alert alert-err">无法加载工具包列表</p>`;
         }
       });
     </script>

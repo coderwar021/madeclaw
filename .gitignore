@@ -8,3 +8,11 @@ data/*.pem
 *.pem
 !data/.gitkeep
 .DS_Store
+# Tool installers live on GitHub Releases (too large for Railway image / git).
+public/downloads/tools/*.dmg
+public/downloads/tools/*.exe
+public/downloads/tools/*.tgz
+public/downloads/tools/*.tar.gz
+public/downloads/tools/*.zip
+!public/downloads/tools/TOOLS-SHA256SUMS.txt
+!public/downloads/tools/TOOLS-REDISTRIBUTION.txt
