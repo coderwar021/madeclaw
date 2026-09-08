@@ -4,10 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>账号 · MadeClaw</title>
+    <meta name="theme-color" content="#f5f5f7" />
     <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="page">
+    <div class="ambient" aria-hidden="true">
+      <div class="wash wash-a"></div>
+      <div class="wash wash-b"></div>
+    </div>
     <header class="top">
       <a class="brand" href="/">
         <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
@@ -25,7 +36,7 @@
       <h1>我的账号</h1>
       <div id="alert" class="alert alert-err" hidden></div>
       <div id="body" class="muted">加载中…</div>
-      <div class="cta-row" style="margin-top: 1.25rem" id="actions" hidden>
+      <div class="cta-row" style="justify-content: flex-start; margin-top: 1.25rem" id="actions" hidden>
         <a class="btn btn-primary" href="/recharge">充值</a>
         <a class="btn btn-ghost" href="/usage">查看用量</a>
         <a class="btn btn-ghost" href="/download">下载客户端</a>
@@ -61,9 +72,7 @@
         document.getElementById("copy")?.addEventListener("click", async () => {
           await navigator.clipboard.writeText(u.userId);
           alertEl.hidden = false;
-          alertEl.className = "alert";
-          alertEl.style.background = "rgba(61,143,122,0.15)";
-          alertEl.style.color = "var(--accent-bright)";
+          alertEl.className = "alert alert-ok";
           alertEl.textContent = "已复制 userId";
         });
       }
@@ -74,6 +83,7 @@
       });
       load().catch((err) => {
         alertEl.hidden = false;
+        alertEl.className = "alert alert-err";
         alertEl.textContent = String(err);
         body.textContent = "";
       });

@@ -1,7 +1,7 @@
 (() => {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // scroll-progress
+  // Thin scroll progress — one intentional chrome motion
   const bar = document.querySelector(".scroll-progress .bar");
   if (bar) {
     const update = () => {
@@ -14,7 +14,7 @@
     update();
   }
 
-  // scroll-reveal
+  // Gentle scroll reveal — second intentional motion
   document.querySelectorAll(".scroll-reveal").forEach((el) => {
     if (reduce) {
       el.classList.add("in");
@@ -29,7 +29,7 @@
           }
         });
       },
-      { threshold: 0.18 },
+      { threshold: 0.14 },
     );
     io.observe(el);
   });
