@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>模型 · MadeClaw</title>
     <meta name="description" content="MadeClaw 支持的模型列表；在 App 内选择，官网管理余额。" />
-    <meta name="theme-color" content="#f5f5f7" />
+    <meta name="theme-color" content="#e9ecef" />
     <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
@@ -18,20 +18,20 @@
   <body class="page">
     <div class="scroll-progress" aria-hidden="true"><div class="bar"></div></div>
     <div class="ambient" aria-hidden="true">
-      <div class="wash wash-a"></div>
-      <div class="wash wash-b"></div>
+      <div class="ambient-mesh"></div>
+      <div class="ambient-grain"></div>
     </div>
     <header class="top">
       <a class="brand" href="/">
         <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
         <span>MadeClaw</span>
       </a>
-      <nav class="nav">
+      <nav class="nav" aria-label="主导航">
         <a href="/features">功能</a>
-        <a href="/models">模型</a>
-        <a href="/download">下载</a>
+        <a class="is-active" href="/models">模型</a>
         <a href="/recharge">充值</a>
         <span data-auth-nav><a href="/login">登录</a></span>
+        <a class="nav-cta" href="/download">下载</a>
       </nav>
     </header>
 

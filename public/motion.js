@@ -1,7 +1,7 @@
 (() => {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Thin scroll progress — one intentional chrome motion
+  // 1) Thin scroll progress
   const bar = document.querySelector(".scroll-progress .bar");
   if (bar) {
     const update = () => {
@@ -14,7 +14,17 @@
     update();
   }
 
-  // Gentle scroll reveal — second intentional motion
+  // 2) Header solidifies after scroll — chrome motion
+  const top = document.querySelector(".top");
+  if (top) {
+    const syncTop = () => {
+      top.classList.toggle("is-scrolled", window.scrollY > 8);
+    };
+    window.addEventListener("scroll", syncTop, { passive: true });
+    syncTop();
+  }
+
+  // 3) Gentle scroll reveal
   document.querySelectorAll(".scroll-reveal").forEach((el) => {
     if (reduce) {
       el.classList.add("in");

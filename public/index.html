@@ -7,7 +7,7 @@
     <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta property="og:image" content="/brand/brand-icon.jpg" />
-    <meta name="theme-color" content="#f5f5f7" />
+    <meta name="theme-color" content="#e9ecef" />
     <meta
       name="description"
       content="MadeClaw：专业桌面 AI 助手。下载客户端，官网登录充值，余额独立结算。"
@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
@@ -23,8 +23,8 @@
   <body class="page home">
     <div class="scroll-progress" aria-hidden="true"><div class="bar"></div></div>
     <div class="ambient" aria-hidden="true">
-      <div class="wash wash-a"></div>
-      <div class="wash wash-b"></div>
+      <div class="ambient-mesh"></div>
+      <div class="ambient-grain"></div>
     </div>
 
     <header class="top top-home">
@@ -32,47 +32,106 @@
         <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
         <span>MadeClaw</span>
       </a>
-      <nav class="nav">
+      <nav class="nav" aria-label="主导航">
         <a href="/features">功能</a>
         <a href="/models">模型</a>
-        <a href="/download">下载</a>
         <a href="/recharge">充值</a>
         <span data-auth-nav><a href="/login">登录</a></span>
+        <a class="nav-cta" href="/download">下载</a>
       </nav>
     </header>
 
     <section class="hero" aria-label="MadeClaw">
-      <img
-        class="hero-mark hero-enter"
-        src="/brand/brand-icon.jpg"
-        width="96"
-        height="96"
-        alt="MadeClaw"
-      />
-      <h1 class="brand-hero hero-enter">MadeClaw</h1>
-      <p class="headline hero-enter hero-enter-delay">专业桌面助手，独立账户体系。</p>
-      <p class="lead hero-enter hero-enter-delay">
-        本机完成对话与执行；账号、充值与用量在官网统一管理。
-      </p>
-      <div class="cta-row hero-enter hero-enter-cta">
-        <a class="btn btn-primary" href="/download">下载客户端</a>
-        <a class="btn btn-ghost" href="/recharge">充值</a>
-        <a class="btn btn-ghost" href="/login">登录</a>
+      <div class="hero-plane" aria-hidden="true"></div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-device">
+          <div class="hero-device-bar"><i></i><i></i><i></i></div>
+          <div class="hero-device-body">
+            <div class="hero-device-rail"><span></span><span></span><span></span></div>
+            <div class="hero-device-main">
+              <div class="hero-device-lines">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-content">
+        <img
+          class="hero-mark hero-enter"
+          src="/brand/brand-icon.jpg"
+          width="88"
+          height="88"
+          alt="MadeClaw"
+        />
+        <h1 class="brand-hero hero-enter">MadeClaw</h1>
+        <p class="headline hero-enter hero-enter-delay">本机完成对话与执行</p>
+        <p class="lead hero-enter hero-enter-delay">
+          账号、充值与用量在官网统一管理；余额独立结算。
+        </p>
+        <div class="cta-row hero-enter hero-enter-cta">
+          <a class="btn btn-primary" href="/download">下载客户端</a>
+          <a class="btn btn-text" href="/login">登录账号</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage" aria-labelledby="stage-title">
+      <div class="stage-grid scroll-reveal">
+        <div class="stage-copy">
+          <p class="eyebrow">Product</p>
+          <h2 id="stage-title">客户端执行，官网结算</h2>
+          <p>
+            产品路径清晰：下载 App → 注册账号 → 配置模型 → 按需充值。每一步都有可见结果。
+          </p>
+        </div>
+        <div class="stage-panel" aria-label="产品要点">
+          <div class="stage-metric">
+            <strong>桌面优先</strong>
+            <span>会话留在本机 Gateway，不依赖云端聊天窗。</span>
+          </div>
+          <div class="stage-metric">
+            <strong>独立余额</strong>
+            <span>充值只写入 MadeClaw 账本，不与 MadeAPI 钱包混用。</span>
+          </div>
+          <div class="stage-metric">
+            <strong>用量可核</strong>
+            <span>Token 统计与消息下传，官网随时核对。</span>
+          </div>
+        </div>
       </div>
     </section>
 
     <section id="features-preview" class="band">
       <div class="band-inner scroll-reveal">
-        <p class="eyebrow">功能</p>
-        <h2>客户端执行，官网结算</h2>
-        <p class="band-lead">
-          产品路径清晰：下载 App → 注册账号 → 配置模型 → 按需充值。每一步都有可见结果。
-        </p>
+        <p class="eyebrow">Capabilities</p>
+        <h2>四条产品边界</h2>
+        <p class="band-lead">少而硬的承诺，方便你判断是否合用。</p>
         <ul class="feature-list">
-          <li><strong>桌面优先</strong> — MadeClaw App 与本机 Gateway，会话留在本地。</li>
-          <li><strong>独立余额</strong> — 充值只写入 MadeClaw 账本，不与 MadeAPI 钱包混用。</li>
-          <li><strong>模型自选</strong> — 在 App 内选择模型；亦可自备 API 跳过余额扣费。</li>
-          <li><strong>用量可核</strong> — Token 统计与消息下传，官网随时核对。</li>
+          <li>
+            <span class="idx" aria-hidden="true">01</span>
+            <div>
+              <strong>桌面优先</strong> — MadeClaw App 与本机 Gateway，会话留在本地。
+            </div>
+          </li>
+          <li>
+            <span class="idx" aria-hidden="true">02</span>
+            <div>
+              <strong>独立余额</strong> — 充值只写入 MadeClaw 账本，不与 MadeAPI 钱包混用。
+            </div>
+          </li>
+          <li>
+            <span class="idx" aria-hidden="true">03</span>
+            <div>
+              <strong>模型自选</strong> — 在 App 内选择模型；亦可自备 API 跳过余额扣费。
+            </div>
+          </li>
+          <li>
+            <span class="idx" aria-hidden="true">04</span>
+            <div>
+              <strong>用量可核</strong> — Token 统计与消息下传，官网随时核对。
+            </div>
+          </li>
         </ul>
         <p class="how-note"><a href="/features">完整功能说明 →</a></p>
       </div>
