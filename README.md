@@ -76,14 +76,15 @@ Bearer: `BILLING_SERVICE_TOKEN` or OOB `MADECLAW_DEFAULT_SERVICE_TOKEN` (`madecl
 
 ## Railway: `WAFFO_PRIVATE_KEY` (critical)
 
-OpenSSL `error:1E08010C:DECODER routines::unsupported` almost always means the PEM in Railway is malformed (literal `\n` not unescaped, missing `BEGIN`/`END`, truncated, or extra quotes).
+OpenSSL `error:1E08010C:DECODER routines::unsupported` almost always means the PEM in Railway is malformed (literal `\n` not unescaped, **double-escaped** `\\n`, missing `BEGIN`/`END`, truncated, space-collapsed one-liner, or extra quotes).
 
-1. In Railway → Variables, set **`WAFFO_PRIVATE_KEY`** to the **full** private key PEM.
-2. Either paste **multiline** PEM, or one line with `\n` escapes between lines.
-3. Headers must be `-----BEGIN PRIVATE KEY-----` (PKCS#8) or `-----BEGIN RSA PRIVATE KEY-----` (PKCS#1).
+1. In Railway → Variables, set **`WAFFO_PRIVATE_KEY`** to the **full** private key PEM (body, not a file path).
+2. Either paste **multiline** PEM, or one line with a **single** layer of `\n` escapes between lines (not `\\n`).
+3. Headers must be `-----BEGIN PRIVATE KEY-----` (PKCS#8), `-----BEGIN RSA PRIVATE KEY-----` (PKCS#1), or `-----BEGIN EC PRIVATE KEY-----`.
 4. Also set `WAFFO_MERCHANT_ID` (and store/product IDs if not using defaults).
-5. Redeploy. `/health` still boots if key is wrong; `/pay` returns a friendly Chinese error and logs the decode detail server-side.
-6. Verify with `npm run test:waffo-key` locally (synthetic key only).
+5. Redeploy. Check **`GET /v1/waffo/status`** (or `/health`): expect `merchantConfigured`, `privateKeyConfigured`, and **`privateKeyParseOk`: true**.
+6. `/pay` distinguishes missing merchant / missing key / parse failure (parse failure logs a PEM header fingerprint only — never the key body).
+7. Verify with `npm run test:waffo-key` locally (synthetic key only).
 
 **Do not** commit real PEM files or paste merchant keys into git.
 

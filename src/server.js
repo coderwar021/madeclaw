@@ -39,8 +39,12 @@ import {
 } from "./defaults.js";
 import { MADECLAW_PUBLIC_MODELS } from "./models-catalog.js";
 import {
-  WAFFO_KEY_USER_MESSAGE,
+  WAFFO_KEY_MISSING_USER_MESSAGE,
+  WAFFO_KEY_PARSE_USER_MESSAGE,
+  WAFFO_MERCHANT_USER_MESSAGE,
+  probeWaffoPrivateKeyStatus,
   resolveWaffoPrivateKey,
+  waffoPemFingerprint,
 } from "./waffo-private-key.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -98,44 +102,57 @@ function getPrivateKey() {
   return cachedPrivateKey;
 }
 
-function isWaffoConfigured() {
-  if (!MERCHANT_ID) return false;
-  if ((process.env.WAFFO_PRIVATE_KEY || "").trim()) return true;
-  const keyPath = path.resolve(
-    appRoot,
-    process.env.WAFFO_PRIVATE_KEY_PATH || "./secrets/waffo-private.pem",
-  );
-  return fs.existsSync(keyPath);
-}
-
 function assertWaffoConfigured() {
   if (!MERCHANT_ID) {
     const err = new Error(
       "WAFFO_MERCHANT_ID is not configured — set Railway env vars to enable checkout",
     );
-    err.code = "waffo_not_configured";
+    err.code = "waffo_merchant_missing";
     err.status = 503;
     throw err;
   }
-  getPrivateKey();
+  try {
+    getPrivateKey();
+  } catch (e) {
+    if (e && e.code === "waffo_not_configured") {
+      e.code = "waffo_key_missing";
+    }
+    throw e;
+  }
 }
 
 /** Map pay/checkout failures to safe user + log-only detail. */
 function payFailureView(e) {
-  if (e.code === "waffo_not_configured") {
+  if (e.code === "waffo_merchant_missing") {
     return {
       status: e.status || 503,
       title: "支付未配置",
-      userMessage: "支付服务尚未配置完成，请稍后重试或联系管理员。",
+      userMessage: WAFFO_MERCHANT_USER_MESSAGE,
+      logDetail: String(e.message || e),
+    };
+  }
+  if (e.code === "waffo_key_missing" || e.code === "waffo_not_configured") {
+    return {
+      status: e.status || 503,
+      title: "支付未配置",
+      userMessage: WAFFO_KEY_MISSING_USER_MESSAGE,
       logDetail: String(e.message || e),
     };
   }
   if (e.code === "waffo_key_invalid") {
-    console.error("[madeclaw-online] WAFFO_PRIVATE_KEY invalid:", e.message);
+    const fp =
+      e.fingerprint ||
+      waffoPemFingerprint(process.env.WAFFO_PRIVATE_KEY || "");
+    console.error(
+      "[madeclaw-online] WAFFO_PRIVATE_KEY invalid:",
+      e.message,
+      "fingerprint=",
+      JSON.stringify(fp),
+    );
     return {
       status: 503,
       title: "支付暂不可用",
-      userMessage: WAFFO_KEY_USER_MESSAGE,
+      userMessage: WAFFO_KEY_PARSE_USER_MESSAGE,
       logDetail: String(e.message || e),
     };
   }
@@ -147,7 +164,7 @@ function payFailureView(e) {
     return {
       status: 503,
       title: "支付暂不可用",
-      userMessage: WAFFO_KEY_USER_MESSAGE,
+      userMessage: WAFFO_KEY_PARSE_USER_MESSAGE,
       logDetail: raw,
     };
   }
@@ -802,20 +819,40 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(appRoot, "public"), { index: false }));
 
+function waffoStatusPayload() {
+  const probe = probeWaffoPrivateKeyStatus({ appRoot });
+  return {
+    ...probe,
+    waffoConfigured:
+      probe.merchantConfigured &&
+      probe.privateKeyConfigured &&
+      probe.privateKeyParseOk,
+  };
+}
+
 app.get("/health", (_req, res) => {
+  const waffo = waffoStatusPayload();
   res.json({
     ok: true,
     service: "madeclaw-online-server",
     creditsMadeApiWallet: false,
     storeId: STORE_ID,
     productId: PRODUCT_ID,
-    waffoConfigured: isWaffoConfigured(),
+    waffoConfigured: waffo.waffoConfigured,
+    merchantConfigured: waffo.merchantConfigured,
+    privateKeyConfigured: waffo.privateKeyConfigured,
+    privateKeyParseOk: waffo.privateKeyParseOk,
     authRequired: Boolean(SERVICE_TOKEN) || REQUIRE_AUTH,
     webhookAuthRequired: Boolean(WEBHOOK_SECRET) || IS_PROD,
     simulateAllowed: ALLOW_SIMULATE,
     publicBase: PUBLIC_BASE,
     siteAuth: true,
   });
+});
+
+/** Safe public probe — booleans only; no key material. */
+app.get("/v1/waffo/status", (_req, res) => {
+  res.json(waffoStatusPayload());
 });
 
 const publicRoot = path.join(appRoot, "public");
@@ -1229,25 +1266,30 @@ app.post("/v1/checkout", requireServiceAuth, async (req, res) => {
       creditTarget: "madeclaw_balance",
     });
   } catch (e) {
-    if (e.code === "waffo_not_configured") {
+    if (
+      e.code === "waffo_not_configured" ||
+      e.code === "waffo_key_missing" ||
+      e.code === "waffo_merchant_missing"
+    ) {
+      const view = payFailureView(e);
       return res.status(503).json({
-        error: "waffo_not_configured",
-        detail: String(e.message),
+        error: e.code,
+        detail: view.userMessage,
       });
     }
     if (e.code === "waffo_key_invalid") {
-      console.error("[madeclaw-online] checkout key invalid:", e.message);
+      const view = payFailureView(e);
       return res.status(503).json({
         error: "waffo_key_invalid",
-        detail: WAFFO_KEY_USER_MESSAGE,
+        detail: view.userMessage,
       });
     }
     const detail = e.body || String(e.message);
     if (typeof detail === "string" && /DECODER routines|unsupported|ERR_OSSL/i.test(detail)) {
-      console.error("[madeclaw-online] checkout crypto error:", detail);
+      console.error("[madeclaw-online] checkout crypto/decode error:", detail);
       return res.status(503).json({
         error: "waffo_key_invalid",
-        detail: WAFFO_KEY_USER_MESSAGE,
+        detail: WAFFO_KEY_PARSE_USER_MESSAGE,
       });
     }
     res
@@ -1293,11 +1335,15 @@ app.get("/pay", async (req, res) => {
   } catch (e) {
     const view = payFailureView(e);
     const safeMsg = view.userMessage.replace(/[<>&]/g, "");
+    const hint =
+      e.code === "waffo_key_invalid"
+        ? "密钥变量已存在但无法解析。请确认 PEM 含完整 BEGIN/END，换行用真实换行或单层 \\n（不要 \\\\n）。可打开 /v1/waffo/status 查看 privateKeyParseOk。"
+        : "若为部署问题，请在 Railway 配置 WAFFO_MERCHANT_ID 与完整的 WAFFO_PRIVATE_KEY（PEM）。状态：/v1/waffo/status";
     res
       .status(view.status)
       .type("html")
       .send(
-        `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${view.title}</title><link rel="icon" href="/favicon.jpg" type="image/jpeg"><link rel="stylesheet" href="/styles.css"></head><body class="page"><main class="panel"><h1>${view.title}</h1><p>${safeMsg}</p><p class="muted">若为部署问题，请在 Railway 配置完整的 WAFFO_PRIVATE_KEY（PEM，可用 \\n 转义换行）。</p><p><a href="/recharge?userId=${encodeURIComponent(userId)}">返回充值页</a></p></main></body></html>`,
+        `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${view.title}</title><link rel="icon" href="/favicon.jpg" type="image/jpeg"><link rel="stylesheet" href="/styles.css"></head><body class="page"><main class="panel"><h1>${view.title}</h1><p>${safeMsg}</p><p class="muted">${hint}</p><p><a href="/recharge?userId=${encodeURIComponent(userId)}">返回充值页</a></p></main></body></html>`,
       );
   }
 });
@@ -1376,7 +1422,7 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`[madeclaw-online] db=${DB_PATH}`);
   console.log(`[madeclaw-online] credits MadeAPI wallet: NO`);
   console.log(`[madeclaw-online] public=${PUBLIC_BASE}`);
-  console.log(`[madeclaw-online] waffoConfigured=${isWaffoConfigured()}`);
+  console.log(`[madeclaw-online] waffo=${JSON.stringify(waffoStatusPayload())}`);
   console.log(`[madeclaw-online] pay=${PUBLIC_BASE}/pay?userId=demo&amountCents=500`);
   console.log(`[madeclaw-online] authRequired=${Boolean(SERVICE_TOKEN) || REQUIRE_AUTH}`);
   console.log(`[madeclaw-online] webhookAuth=${Boolean(WEBHOOK_SECRET)}`);
