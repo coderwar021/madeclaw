@@ -1,5 +1,5 @@
 /**
- * Shared MadeClaw site auth helpers (credentials: include for session cookie).
+ * Shared MadeAPI site auth helpers (credentials: include for session cookie).
  */
 (() => {
   const api = {

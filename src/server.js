@@ -1,6 +1,6 @@
 /**
- * MadeClaw online server — public site + billing API + Waffo recharge.
- * Credits ONLY this MadeClaw ledger (creditsMadeApiWallet: false). Never MadeAPI wallets.
+ * MadeAPI online server — public site + billing API + Waffo recharge.
+ * Credits ONLY this site ledger (creditsMadeApiWallet: false). Never the model-API wallet.
  *
  * Production hardening vs local billing prototype:
  * - Bearer: BILLING_SERVICE_TOKEN or MADECLAW_DEFAULT_SERVICE_TOKEN (OOB)
@@ -37,7 +37,7 @@ import {
   MADECLAW_PUBLIC_ORIGIN,
   MADECLAW_RELEASE_TAG,
 } from "./defaults.js";
-import { MADECLAW_PUBLIC_MODELS } from "./models-catalog.js";
+import { getPublicModelFamilies } from "./models-catalog.js";
 import {
   WAFFO_KEY_MISSING_USER_MESSAGE,
   WAFFO_KEY_PARSE_USER_MESSAGE,
@@ -171,7 +171,7 @@ function payFailureView(e) {
   return {
     status: e.status || 500,
     title: "支付创建失败",
-    userMessage: "请返回 MadeClaw 或稍后重试。",
+    userMessage: "请返回 MadeAPI 或稍后重试。",
     logDetail: raw,
   };
 }
@@ -906,11 +906,16 @@ app.get("/v1/pay/success", (_req, res) => {
   res.redirect(302, "/pay/success");
 });
 
-app.get("/v1/models", (_req, res) => {
+app.get("/v1/models", async (_req, res) => {
+  const catalog = await getPublicModelFamilies();
+  res.setHeader("Cache-Control", "public, max-age=60");
   res.json({
     provider: "madeapi",
-    note: "在 MadeClaw App / Control UI 内选择模型；本站负责账号与充值。自备 API（非 madeapi）可跳过余额扣费。",
-    families: MADECLAW_PUBLIC_MODELS,
+    note: "模型列表实时同步自 madeapi.com；在 MadeAPI App / Control UI 内选择。本站负责账号与充值。自备 API（非 madeapi）可跳过余额扣费。",
+    source: catalog.source,
+    pricingVersion: catalog.pricingVersion,
+    fetchedAt: catalog.fetchedAt,
+    families: catalog.families,
   });
 });
 
@@ -955,7 +960,7 @@ app.get("/v1/downloads", (_req, res) => {
   });
 });
 
-/** One-click tool download: 302 to MadeClaw-hosted Release asset (not a marketing hash page). */
+/** One-click tool download: 302 to hosted Release asset (not a marketing hash page). */
 app.get("/downloads/tools/:toolId", (req, res) => {
   const tool = MADECLAW_DOWNLOADS.tools[String(req.params.toolId || "").trim()];
   if (!tool?.url) {
@@ -1024,7 +1029,7 @@ app.get("/v1/uamgo/connect", (req, res) => {
   };
   if (appId) return res.json(recipes[appId]);
   res.json({
-    note: "在 MadeClaw App「uamgo all」点连接可自动写入；本接口仅返回配方（无真实密钥）。",
+    note: "在 MadeAPI App「uamgo all」点连接可自动写入；本接口仅返回配方（无真实密钥）。",
     apps: Object.values(recipes),
   });
 });
@@ -1299,7 +1304,7 @@ app.post("/v1/checkout", requireServiceAuth, async (req, res) => {
 });
 
 /**
- * Public pay entry — MadeClaw App / madeclaw_recharge opens this URL.
+ * Public pay entry — MadeAPI App / madeclaw_recharge opens this URL.
  * GET /pay?userId=...&amountCents=500
  */
 app.get("/pay", async (req, res) => {
@@ -1312,7 +1317,7 @@ app.get("/pay", async (req, res) => {
   if (!userId) {
     res.redirect(
       302,
-      `/login?next=${encodeURIComponent(`/recharge`)}&error=${encodeURIComponent("请先登录，或从 MadeClaw App 打开带 userId 的充值链接")}`,
+      `/login?next=${encodeURIComponent(`/recharge`)}&error=${encodeURIComponent("请先登录，或从 MadeAPI App 打开带 userId 的充值链接")}`,
     );
     return;
   }

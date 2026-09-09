@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>模型 · MadeClaw</title>
-    <meta name="description" content="MadeClaw 支持的模型列表；在 App 内选择，官网管理余额。" />
+    <title>模型 · MadeAPI</title>
+    <meta name="description" content="MadeAPI 支持的模型列表；在 App 内选择，官网管理余额。" />
     <meta name="theme-color" content="#e9ecef" />
     <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,7 +24,7 @@
     <header class="top">
       <a class="brand" href="/">
         <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
-        <span>MadeClaw</span>
+        <span>MadeAPI</span>
       </a>
       <nav class="nav" aria-label="主导航">
         <a href="/features">功能</a>
@@ -41,8 +41,7 @@
           <p class="eyebrow">Models</p>
           <h1 class="page-title">模型选项</h1>
           <p class="band-lead">
-            在 MadeClaw App / Control UI 内选择模型；充值与余额在本站管理。使用自备 API
-            时可跳过 MadeClaw 余额扣费。
+            模型目录实时同步自 <a href="https://madeapi.com" target="_blank" rel="noopener">madeapi.com</a>。在 MadeAPI App / Control UI 内选择；充值与余额在本站管理。使用自备 API 时可跳过本站余额扣费。
           </p>
           <p class="how-note">公开稳定 ID · provider 前缀 <code>madeapi/</code></p>
         </div>
@@ -56,7 +55,7 @@
     </main>
 
     <footer class="foot">
-      <span class="foot-brand">MadeClaw</span>
+      <span class="foot-brand">MadeAPI</span>
       <span class="foot-sep">·</span>
       模型目录
     </footer>
@@ -69,7 +68,8 @@
         try {
           const res = await fetch("/v1/models");
           const data = await res.json();
-          root.innerHTML = data.families
+          const src = data.source ? `<p class="how-note muted">来源：${data.source}${data.pricingVersion ? " · " + data.pricingVersion.slice(0, 12) : ""}</p>` : "";
+          root.innerHTML = src + data.families
             .map(
               (fam) => `
             <div class="model-family">
