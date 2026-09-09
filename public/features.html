@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
@@ -88,12 +88,31 @@
         </div>
       </section>
     </main>
-
-    <footer class="foot">
-      <span class="foot-brand">MadeAPI</span>
-      <span class="foot-sep">·</span>
-      功能
+    <footer class="labs-foot" aria-label="MadeAPI 页脚">
+      <div class="labs-foot__physics" data-labs-physics aria-hidden="true"></div>
+      <hr class="labs-foot__rule" />
+      <div class="labs-foot__bar">
+        <a class="labs-foot__brand" href="/">
+          <img
+            class="labs-foot__mark"
+            src="/brand/brand-icon.jpg"
+            width="24"
+            height="24"
+            alt=""
+          />
+          <span class="labs-foot__brand-label">其他团队与产品方向</span>
+        </a>
+        <ul class="labs-foot__links">
+          <li><a href="/models">模型</a></li>
+          <li><a href="/download">下载</a></li>
+          <li><a href="/recharge">充值</a></li>
+          <li><a href="/usage">文档/用量</a></li>
+        </ul>
+      </div>
+      <p class="labs-foot__wordmark" aria-hidden="true">MadeAPI</p>
     </footer>
+    <script src="/vendor/matter.min.js" defer></script>
+    <script src="/footer-physics.js" defer></script>
     <script src="/site-auth.js" defer></script>
     <script src="/motion.js" defer></script>
     <script>
