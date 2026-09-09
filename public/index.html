@@ -7,152 +7,366 @@
     <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta property="og:image" content="/brand/brand-icon.jpg" />
-    <meta name="theme-color" content="#e9ecef" />
+    <meta name="theme-color" content="#F3EFEA" />
     <meta
       name="description"
-      content="MadeAPI：专业桌面 AI 助手。下载客户端，官网登录充值，余额独立结算。"
+      content="MadeAPI：发现桌面 AI 能力、模型目录、充值与开发工具。下载客户端，官网登录结算。"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="page home">
-    <div class="scroll-progress" aria-hidden="true"><div class="bar"></div></div>
-    <div class="ambient" aria-hidden="true">
-      <div class="ambient-mesh"></div>
-      <div class="ambient-grain"></div>
-    </div>
-
-    <header class="top top-home">
-      <a class="brand" href="/">
-        <img class="brand-mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
-        <span>MadeAPI</span>
+  <body class="page home" data-category="all">
+    <header class="header">
+      <a class="header__brand" href="/">
+        <img class="header__mark" src="/brand/brand-icon.jpg" width="28" height="28" alt="" />
+        <span class="header__title">MadeAPI</span>
       </a>
-      <nav class="nav" aria-label="主导航">
-        <a href="/features">功能</a>
-        <a href="/models">模型</a>
-        <a href="/recharge">充值</a>
-        <span data-auth-nav><a href="/login">登录</a></span>
-        <a class="nav-cta" href="/download">下载</a>
+      <nav class="header__nav" aria-label="页面分区">
+        <a href="#about">关于</a>
+        <a href="#experiments">实验</a>
+        <a href="#connect">保持联系</a>
       </nav>
+      <div class="header__actions">
+        <span data-auth-nav><a href="/login">登录</a></span>
+        <a class="header__cta" href="/download">下载</a>
+      </div>
     </header>
 
-    <section class="hero" aria-label="MadeAPI">
-      <div class="hero-plane" aria-hidden="true"></div>
-      <div class="hero-visual" aria-hidden="true">
-        <div class="hero-device">
-          <div class="hero-device-bar"><i></i><i></i><i></i></div>
-          <div class="hero-device-body">
-            <div class="hero-device-rail"><span></span><span></span><span></span></div>
-            <div class="hero-device-main">
-              <div class="hero-device-lines">
-                <span></span><span></span><span></span><span></span>
-              </div>
-            </div>
+    <section class="featured-hero" aria-label="精选产品" data-hero>
+      <div class="featured-hero__slides">
+        <article class="featured-hero__slide is-active" data-hero-slide="0">
+          <div class="featured-hero__media" aria-hidden="true">
+            <div class="featured-hero__poster featured-hero__poster--desktop"></div>
           </div>
+          <div class="featured-hero__text">
+            <p class="featured-hero__eyebrow">Desktop</p>
+            <h1 class="featured-hero__heading">MadeAPI 桌面客户端</h1>
+            <p class="featured-hero__subheading">
+              本机完成对话与执行。会话留在本地 Gateway，官网统一管理账号与余额。
+            </p>
+            <a class="featured-hero__cta" href="/download"><span>立即试用</span></a>
+          </div>
+        </article>
+        <article class="featured-hero__slide" data-hero-slide="1">
+          <div class="featured-hero__media" aria-hidden="true">
+            <div class="featured-hero__poster featured-hero__poster--models"></div>
+          </div>
+          <div class="featured-hero__text">
+            <p class="featured-hero__eyebrow">Models</p>
+            <h2 class="featured-hero__heading">模型目录</h2>
+            <p class="featured-hero__subheading">
+              实时同步 madeapi.com。在 App 内选择模型；亦可自备 API 跳过余额扣费。
+            </p>
+            <a class="featured-hero__cta" href="/models"><span>立即试用</span></a>
+          </div>
+        </article>
+        <article class="featured-hero__slide" data-hero-slide="2">
+          <div class="featured-hero__media" aria-hidden="true">
+            <div class="featured-hero__poster featured-hero__poster--recharge"></div>
+          </div>
+          <div class="featured-hero__text">
+            <p class="featured-hero__eyebrow">Billing</p>
+            <h2 class="featured-hero__heading">独立余额充值</h2>
+            <p class="featured-hero__subheading">
+              充值只写入本站账本，不与模型 API 钱包混用。同一 userId 贯穿支付与运行。
+            </p>
+            <a class="featured-hero__cta" href="/recharge"><span>立即试用</span></a>
+          </div>
+        </article>
+        <article class="featured-hero__slide" data-hero-slide="3">
+          <div class="featured-hero__media" aria-hidden="true">
+            <div class="featured-hero__poster featured-hero__poster--tools"></div>
+          </div>
+          <div class="featured-hero__text">
+            <p class="featured-hero__eyebrow">Develop</p>
+            <h2 class="featured-hero__heading">开发工具镜像</h2>
+            <p class="featured-hero__subheading">
+              Codex / Claude Code / Kimi 安装包由 MadeAPI 镜像托管，点击即下。
+            </p>
+            <a class="featured-hero__cta" href="/download#tools"><span>立即试用</span></a>
+          </div>
+        </article>
+      </div>
+      <div class="featured-hero__progress" role="tablist" aria-label="精选轮播">
+        <button type="button" class="featured-hero__progress-track" data-hero-goto="0" aria-label="桌面客户端">
+          <span class="featured-hero__progress-fill is-running"></span>
+        </button>
+        <button type="button" class="featured-hero__progress-track" data-hero-goto="1" aria-label="模型目录">
+          <span class="featured-hero__progress-fill"></span>
+        </button>
+        <button type="button" class="featured-hero__progress-track" data-hero-goto="2" aria-label="充值">
+          <span class="featured-hero__progress-fill"></span>
+        </button>
+        <button type="button" class="featured-hero__progress-track" data-hero-goto="3" aria-label="开发工具">
+          <span class="featured-hero__progress-fill"></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="early-access" aria-labelledby="early-title">
+      <div class="early-access__inner scroll-reveal">
+        <h2 id="early-title" class="early-access__title">抢先体验</h2>
+        <a class="early-access__card" href="/register">
+          <div class="early-access__copy">
+            <h3>创建 MadeAPI 账号</h3>
+            <p>
+              注册后获得稳定 userId，与 App 扣费 / 充值账本绑定。账号、余额与用量在官网统一可见。
+            </p>
+            <span class="early-access__cta">加入等候 →</span>
+          </div>
+          <div class="early-access__visual" aria-hidden="true"></div>
+        </a>
+      </div>
+    </section>
+
+    <section id="experiments" class="home-carousel" aria-labelledby="exp-title">
+      <div class="home-carousel__head scroll-reveal">
+        <h2 id="exp-title">实验与产品能力</h2>
+        <p>从桌面执行到模型、充值、用量与开发工具——按主题浏览 MadeAPI 能力。</p>
+      </div>
+
+      <div class="categories" role="toolbar" aria-label="分类筛选">
+        <div class="categories__wrapper">
+          <button type="button" class="categories__button categories__button--all active" data-filter="all">
+            全部
+          </button>
+          <button type="button" class="categories__button categories__button--create" data-filter="create">
+            创作
+          </button>
+          <button type="button" class="categories__button categories__button--develop" data-filter="develop">
+            开发
+          </button>
+          <button type="button" class="categories__button categories__button--explore" data-filter="explore">
+            探索
+          </button>
+          <button type="button" class="categories__button categories__button--learn" data-filter="learn">
+            账户
+          </button>
         </div>
       </div>
-      <div class="hero-content">
-        <img
-          class="hero-mark hero-enter"
-          src="/brand/brand-icon.jpg"
-          width="88"
-          height="88"
-          alt="MadeAPI"
-        />
-        <h1 class="brand-hero hero-enter">MadeAPI</h1>
-        <p class="headline hero-enter hero-enter-delay">本机完成对话与执行</p>
-        <p class="lead hero-enter hero-enter-delay">
-          账号、充值与用量在官网统一管理；余额独立结算。
+
+      <div class="carousel-rail" data-experiment-grid>
+        <a class="carousel-card" href="/download" data-tags="create develop all">
+          <div class="carousel-card__image">
+            <div class="carousel-card__image__ratio carousel-card__image__ratio--a"></div>
+          </div>
+          <div class="carousel-card__content">
+            <h3 class="carousel-card__content__title">桌面客户端</h3>
+            <p class="carousel-card__content__subtitle">
+              macOS / Windows 安装包。本机 Gateway + Control UI，会话留在本地。
+            </p>
+            <span class="carousel-card__cta"
+              ><span class="carousel-card__cta__label">立即试用</span
+              ><span class="carousel-card__cta__icon" aria-hidden="true">→</span></span
+            >
+          </div>
+        </a>
+        <a class="carousel-card" href="/features" data-tags="create explore all">
+          <div class="carousel-card__image">
+            <div class="carousel-card__image__ratio carousel-card__image__ratio--b"></div>
+          </div>
+          <div class="carousel-card__content">
+            <h3 class="carousel-card__content__title">功能边界</h3>
+            <p class="carousel-card__content__subtitle">
+              桌面优先、独立余额、模型自选、用量可核——少而硬的产品承诺。
+            </p>
+            <span class="carousel-card__cta"
+              ><span class="carousel-card__cta__label">立即试用</span
+              ><span class="carousel-card__cta__icon" aria-hidden="true">→</span></span
+            >
+          </div>
+        </a>
+        <a class="carousel-card" href="/models" data-tags="explore develop all">
+          <div class="carousel-card__image">
+            <div class="carousel-card__image__ratio carousel-card__image__ratio--c"></div>
+          </div>
+          <div class="carousel-card__content">
+            <h3 class="carousel-card__content__title">模型目录</h3>
+            <p class="carousel-card__content__subtitle">
+              公开稳定 ID，provider 前缀 madeapi/。目录实时同步自 madeapi.com。
+            </p>
+            <span class="carousel-card__cta"
+              ><span class="carousel-card__cta__label">立即试用</span
+              ><span class="carousel-card__cta__icon" aria-hidden="true">→</span></span
+            >
+          </div>
+        </a>
+        <a class="carousel-card" href="/recharge" data-tags="learn explore all">
+          <div class="carousel-card__image">
+            <div class="carousel-card__image__ratio carousel-card__image__ratio--d"></div>
+          </div>
+          <div class="carousel-card__content">
+            <h3 class="carousel-card__content__title">安全充值</h3>
+            <p class="carousel-card__content__subtitle">
+              官网收银台入账；登录后自动绑定 userId。支付成功由 Webhook 写入账本。
+            </p>
+            <span class="carousel-card__cta"
+              ><span class="carousel-card__cta__label">立即试用</span
+              ><span class="carousel-card__cta__icon" aria-hidden="true">→</span></span
+            >
+          </div>
+        </a>
+        <a class="carousel-card" href="/download#tools" data-tags="develop create all">
+          <div class="carousel-card__image">
+            <div class="carousel-card__image__ratio carousel-card__image__ratio--e"></div>
+          </div>
+          <div class="carousel-card__content">
+            <h3 class="carousel-card__content__title">Codex / Claude / Kimi</h3>
+            <p class="carousel-card__content__subtitle">
+              开发工具一键下载，镜像托管于 GitHub Releases，附校验和与来源说明。
+            </p>
+            <span class="carousel-card__cta"
+              ><span class="carousel-card__cta__label">立即试用</span
+              ><span class="carousel-card__cta__icon" aria-hidden="true">→</span></span
+            >
+          </div>
+        </a>
+        <a class="carousel-card" href="/usage" data-tags="learn explore all">
+          <div class="carousel-card__image">
+            <div class="carousel-card__image__ratio carousel-card__image__ratio--f"></div>
+          </div>
+          <div class="carousel-card__content">
+            <h3 class="carousel-card__content__title">Token 用量</h3>
+            <p class="carousel-card__content__subtitle">
+              客户端上报用量；官网随时核对汇总。支持会话查询或 serviceToken。
+            </p>
+            <span class="carousel-card__cta"
+              ><span class="carousel-card__cta__label">立即试用</span
+              ><span class="carousel-card__cta__icon" aria-hidden="true">→</span></span
+            >
+          </div>
+        </a>
+        <a class="carousel-card" href="/account" data-tags="learn all">
+          <div class="carousel-card__image">
+            <div class="carousel-card__image__ratio carousel-card__image__ratio--a"></div>
+          </div>
+          <div class="carousel-card__content">
+            <h3 class="carousel-card__content__title">账号中心</h3>
+            <p class="carousel-card__content__subtitle">
+              查看余额、复制 userId、收件箱与用量。将同一 ID 写入 App 配置即可对齐结算。
+            </p>
+            <span class="carousel-card__cta"
+              ><span class="carousel-card__cta__label">立即试用</span
+              ><span class="carousel-card__cta__icon" aria-hidden="true">→</span></span
+            >
+          </div>
+        </a>
+        <a class="carousel-card" href="/login" data-tags="learn all">
+          <div class="carousel-card__image">
+            <div class="carousel-card__image__ratio carousel-card__image__ratio--b"></div>
+          </div>
+          <div class="carousel-card__content">
+            <h3 class="carousel-card__content__title">登录会话</h3>
+            <p class="carousel-card__content__subtitle">
+              用户名或邮箱登录，管理余额、充值与用量。安全会话 Cookie。
+            </p>
+            <span class="carousel-card__cta"
+              ><span class="carousel-card__cta__label">立即试用</span
+              ><span class="carousel-card__cta__icon" aria-hidden="true">→</span></span
+            >
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section id="about" class="about" aria-labelledby="about-title">
+      <div class="about__inner scroll-reveal">
+        <h2 id="about-title">关于 MadeAPI</h2>
+        <p>
+          MadeAPI 把执行留在桌面，把账号与结算留在官网。发现最新能力、下载客户端、配置模型，并通过独立余额完成计费——帮助你把日常 AI
+          工作流变成可核对、可延续的产品体验。
         </p>
-        <div class="cta-row hero-enter hero-enter-cta">
-          <a class="btn btn-primary" href="/download">下载客户端</a>
-          <a class="btn btn-text" href="/login">登录账号</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="stage" aria-labelledby="stage-title">
-      <div class="stage-grid scroll-reveal">
-        <div class="stage-copy">
-          <p class="eyebrow">Product</p>
-          <h2 id="stage-title">客户端执行，官网结算</h2>
-          <p>
-            产品路径清晰：下载 App → 注册账号 → 配置模型 → 按需充值。每一步都有可见结果。
-          </p>
-        </div>
-        <div class="stage-panel" aria-label="产品要点">
-          <div class="stage-metric">
-            <strong>桌面优先</strong>
-            <span>会话留在本机 Gateway，不依赖云端聊天窗。</span>
-          </div>
-          <div class="stage-metric">
-            <strong>独立余额</strong>
-            <span>充值只写入 本站账本，不与模型 API 钱包混用。</span>
-          </div>
-          <div class="stage-metric">
-            <strong>用量可核</strong>
-            <span>Token 统计与消息下传，官网随时核对。</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="features-preview" class="band">
-      <div class="band-inner scroll-reveal">
-        <p class="eyebrow">Capabilities</p>
-        <h2>四条产品边界</h2>
-        <p class="band-lead">少而硬的承诺，方便你判断是否合用。</p>
-        <ul class="feature-list">
-          <li>
-            <span class="idx" aria-hidden="true">01</span>
-            <div>
-              <strong>桌面优先</strong> — MadeAPI App 与本机 Gateway，会话留在本地。
-            </div>
-          </li>
-          <li>
-            <span class="idx" aria-hidden="true">02</span>
-            <div>
-              <strong>独立余额</strong> — 充值只写入 本站账本，不与模型 API 钱包混用。
-            </div>
-          </li>
-          <li>
-            <span class="idx" aria-hidden="true">03</span>
-            <div>
-              <strong>模型自选</strong> — 在 App 内选择模型；亦可自备 API 跳过余额扣费。
-            </div>
-          </li>
-          <li>
-            <span class="idx" aria-hidden="true">04</span>
-            <div>
-              <strong>用量可核</strong> — Token 统计与消息下传，官网随时核对。
-            </div>
-          </li>
-        </ul>
-        <p class="how-note"><a href="/features">完整功能说明 →</a></p>
-      </div>
-    </section>
-
-    <section id="how" class="how">
-      <div class="how-inner scroll-reveal">
-        <h2>开始使用</h2>
-        <ol class="how-steps">
-          <li>从 <a href="/download">下载页</a> 获取 macOS / Windows 安装包并启动 MadeAPI。</li>
-          <li>在本站 <a href="/register">注册</a>，于账号页复制稳定 <code>userId</code>。</li>
-          <li>在 App 配置模型与密钥（或使用本站余额）；不足时前往 <a href="/recharge">充值</a>。</li>
-        </ol>
-        <p class="how-note">
-          <a href="/download#howto">安装指引</a> · <a href="/models">模型列表</a>
+        <p>
+          获取早期能力、反馈使用结果，并让这些能力沉淀为你每天真正会打开的工具。客户端负责对话与执行；官网负责注册、充值与用量可见性。
         </p>
+      </div>
+    </section>
+
+    <section class="graduation" aria-labelledby="grad-title">
+      <div class="graduation__head scroll-reveal">
+        <h2 id="grad-title">走出实验室</h2>
+        <p>
+          每条路径都从一个清晰问题开始：AI 怎样更有用？我们把能力做成可下载、可登录、可充值的产品环节。部分能力会走出「实验」阶段，成为你工作流里的固定步骤。
+        </p>
+      </div>
+      <div class="graduation__grid scroll-reveal">
+        <a class="graduation-card" href="/download">
+          <div class="graduation-card__media graduation-card__media--1" aria-hidden="true"></div>
+          <div class="graduation-card__pills">
+            <span class="graduation-card__pill">安装包</span>
+            <span class="graduation-card__pill">→ 桌面 App</span>
+          </div>
+          <h3 class="graduation-card__headline">MadeAPI Desktop</h3>
+          <p class="graduation-card__description">从下载页起步，安装本机客户端与 Gateway。</p>
+        </a>
+        <a class="graduation-card" href="/register">
+          <div class="graduation-card__media graduation-card__media--2" aria-hidden="true"></div>
+          <div class="graduation-card__pills">
+            <span class="graduation-card__pill">注册</span>
+            <span class="graduation-card__pill">→ 稳定 userId</span>
+          </div>
+          <h3 class="graduation-card__headline">账号身份</h3>
+          <p class="graduation-card__description">官网注册后复制 userId，写入 App 配置。</p>
+        </a>
+        <a class="graduation-card" href="/models">
+          <div class="graduation-card__media graduation-card__media--3" aria-hidden="true"></div>
+          <div class="graduation-card__pills">
+            <span class="graduation-card__pill">模型列表</span>
+            <span class="graduation-card__pill">→ App 内选择</span>
+          </div>
+          <h3 class="graduation-card__headline">模型路由</h3>
+          <p class="graduation-card__description">公开目录同步；自备 API 可跳过余额扣费。</p>
+        </a>
+        <a class="graduation-card" href="/recharge">
+          <div class="graduation-card__media graduation-card__media--4" aria-hidden="true"></div>
+          <div class="graduation-card__pills">
+            <span class="graduation-card__pill">充值</span>
+            <span class="graduation-card__pill">→ 独立账本</span>
+          </div>
+          <h3 class="graduation-card__headline">计费结算</h3>
+          <p class="graduation-card__description">收银台入账；余额与用量在账号页核对。</p>
+        </a>
+        <a class="graduation-card" href="/usage">
+          <div class="graduation-card__media graduation-card__media--5" aria-hidden="true"></div>
+          <div class="graduation-card__pills">
+            <span class="graduation-card__pill">用量</span>
+            <span class="graduation-card__pill">→ 可见结果</span>
+          </div>
+          <h3 class="graduation-card__headline">用量洞察</h3>
+          <p class="graduation-card__description">Token 汇总与事件计数，随时可查。</p>
+        </a>
+      </div>
+    </section>
+
+    <section id="connect" class="pre-footer" aria-labelledby="connect-title">
+      <div class="pre-footer__inner scroll-reveal">
+        <h2 id="connect-title">保持联系，抢先获取新能力</h2>
+        <div class="pre-footer__ctas">
+          <a class="pre-footer__cta" href="/register">
+            <strong>注册账号</strong>
+            <span>不错过新功能与下载更新</span>
+          </a>
+          <a class="pre-footer__cta" href="/login">
+            <strong>成为早期用户</strong>
+            <span>登录后管理余额、充值与用量</span>
+          </a>
+        </div>
       </div>
     </section>
 
     <footer class="foot">
       <span class="foot-brand">MadeAPI</span>
+      <span class="foot-sep">·</span>
+      <a href="/features">功能</a>
+      <span class="foot-sep">·</span>
+      <a href="/models">模型</a>
+      <span class="foot-sep">·</span>
+      <a href="/download">下载</a>
       <span class="foot-sep">·</span>
       桌面 AI 助手 · 独立结算
     </footer>
